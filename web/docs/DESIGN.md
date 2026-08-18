@@ -48,6 +48,11 @@ from the tokens. The mark is the threshold line with the marker above it — the
 element, so the app icon says what the product is. Regenerate with
 `node scripts/make-icons.mjs`; nothing binary in this repo is un-regenerable.
 
+## Deferred
+
+Recorded in [TODO.md](TODO.md), with reasons — including the Malayalam optical-size
+mismatch against Latin at the same `font-size`.
+
 ## Still to build
 
 The threshold line component itself, the forecast sparkline, the 3D scene, and the
