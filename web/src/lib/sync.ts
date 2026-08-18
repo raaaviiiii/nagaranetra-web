@@ -1,64 +1,57 @@
 /**
- * The offline outbox.
+ * Replaying the outbound queue.
  *
- * A help request tapped with no signal must not be lost and must not silently pretend to
- * have been sent. It is queued here, the interface says it is queued, and it is flushed
- * when the device comes back.
+ * A help request tapped with no signal must not be lost, and must not pretend to have
+ * been sent. It is written to IndexedDB first, the interface says "queued", and it is
+ * replayed when the device comes back.
  *
- * Note the wording rule from CLAUDE.md §2: delivering an item means the request was
- * NOTIFIED to an authority. We never claim it dispatched anyone.
+ * Wording rule (CLAUDE.md §2): a delivered item means the request was NOTIFIED to an
+ * authority. We never say it dispatched anyone.
  */
-import { load, save } from './storage';
+import { postRequest } from './api';
+import { dequeue, enqueue, listQueued, markAttempted, type QueuedRequest } from './storage';
+import type { HelpRequest } from './contract';
 
-const OUTBOX_KEY = 'outbox';
-
-export type OutboxItem = {
-  /** Stable client id, so a retry cannot create a duplicate request server-side. */
-  id: string;
-  /** Contract path this item should be POSTed to. */
-  path: string;
-  /** Serialisable body, exactly as the contract defines it. */
-  body: unknown;
-  /** Epoch ms the resident tapped, not the time we managed to send. */
-  queuedAt: number;
-};
-
-export function listQueued(): OutboxItem[] {
-  return load<OutboxItem[]>(OUTBOX_KEY, []);
+/** Queue a help request for delivery. Returns the stored record, including its clientId. */
+export async function queueHelpRequest(body: HelpRequest): Promise<QueuedRequest> {
+  return enqueue({ clientId: body.clientId, path: '/requests', body });
 }
 
-export function enqueue(item: Omit<OutboxItem, 'id' | 'queuedAt'>): OutboxItem {
-  const queued: OutboxItem = { ...item, id: crypto.randomUUID(), queuedAt: Date.now() };
-  save(OUTBOX_KEY, [...listQueued(), queued]);
-  return queued;
-}
+export type FlushResult = { sent: number; remaining: number };
 
 /**
- * Try to send everything queued. `send` is injected rather than imported so this module
- * stays testable and so the network stays behind `api.ts`.
- * Items that fail stay in the queue, in order.
+ * Try to deliver everything queued, oldest first.
+ *
+ * Safe to call at any time: `clientId` makes the endpoint idempotent (contract §6), so a
+ * request that actually reached the backend before we lost the response is not duplicated
+ * by a retry. Items that fail stay queued with their attempt count incremented.
  */
-export async function flush(send: (item: OutboxItem) => Promise<void>): Promise<number> {
-  const pending = listQueued();
-  const remaining: OutboxItem[] = [];
+export async function flush(): Promise<FlushResult> {
+  const pending = await listQueued();
   let sent = 0;
 
   for (const item of pending) {
     try {
-      await send(item);
+      await postRequest(item.body);
+      await dequeue(item.clientId);
       sent += 1;
-    } catch {
-      remaining.push(item);
+    } catch (error) {
+      console.warn('[sync] delivery failed, item stays queued:', item.clientId, error);
+      await markAttempted(item.clientId);
     }
   }
 
-  save(OUTBOX_KEY, remaining);
-  return sent;
+  return { sent, remaining: (await listQueued()).length };
 }
 
-/** Call once at start-up. Flushes whenever the device regains connectivity. */
-export function watchConnectivity(send: (item: OutboxItem) => Promise<void>): () => void {
-  const onOnline = () => void flush(send);
-  window.addEventListener('online', onOnline);
-  return () => window.removeEventListener('online', onOnline);
+/**
+ * Flush whenever the device regains connectivity. Call once at start-up; returns a
+ * teardown function.
+ */
+export function watchConnectivity(onFlush?: (result: FlushResult) => void): () => void {
+  const handler = () => {
+    void flush().then((result) => onFlush?.(result));
+  };
+  window.addEventListener('online', handler);
+  return () => window.removeEventListener('online', handler);
 }
