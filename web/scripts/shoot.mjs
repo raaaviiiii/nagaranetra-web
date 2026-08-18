@@ -11,10 +11,9 @@
  * Writes PNGs to .shots/ and prints, per path and per width, the document scroll width
  * and any element wider than the viewport — the horizontal-overflow culprits.
  */
-import { spawn } from 'node:child_process';
-import { mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { connect, evaluate, launchChrome, pageTarget, wait } from './cdp.mjs';
 
-const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 const ORIGIN = process.env.SHOOT_ORIGIN ?? 'http://localhost:5173';
 const PORT = 9222;
 const WIDTHS = [
@@ -23,61 +22,9 @@ const WIDTHS = [
 ];
 const paths = process.argv.slice(2).length ? process.argv.slice(2) : ['/'];
 
-const profile = `.shots/.chrome-profile`;
-rmSync(profile, { recursive: true, force: true });
+const profile = '.shots/.chrome-profile';
 mkdirSync('.shots', { recursive: true });
-
-const chrome = spawn(CHROME, [
-  '--headless',
-  '--disable-gpu',
-  '--hide-scrollbars',
-  `--remote-debugging-port=${PORT}`,
-  `--user-data-dir=${profile}`,
-  'about:blank',
-]);
-chrome.on('error', (e) => {
-  console.error('could not start Chrome:', e.message);
-  process.exit(1);
-});
-
-/** Poll until the DevTools endpoint answers, then return the page target. */
-async function target() {
-  for (let attempt = 0; attempt < 50; attempt++) {
-    try {
-      const list = await (await fetch(`http://127.0.0.1:${PORT}/json/list`)).json();
-      const page = list.find((t) => t.type === 'page');
-      if (page) return page;
-    } catch {
-      /* not up yet */
-    }
-    await new Promise((r) => setTimeout(r, 100));
-  }
-  throw new Error('Chrome DevTools endpoint never came up');
-}
-
-/** Minimal CDP client: send(method, params) -> result. */
-function connect(url) {
-  const socket = new WebSocket(url);
-  const pending = new Map();
-  let nextId = 1;
-  socket.addEventListener('message', (event) => {
-    const message = JSON.parse(event.data);
-    const waiter = pending.get(message.id);
-    if (!waiter) return;
-    pending.delete(message.id);
-    message.error ? waiter.reject(new Error(message.error.message)) : waiter.resolve(message.result);
-  });
-  const ready = new Promise((resolve) => socket.addEventListener('open', resolve));
-  return {
-    ready,
-    send(method, params = {}) {
-      const id = nextId++;
-      socket.send(JSON.stringify({ id, method, params }));
-      return new Promise((resolve, reject) => pending.set(id, { resolve, reject }));
-    },
-    close: () => socket.close(),
-  };
-}
+const chrome = launchChrome({ port: PORT, profile });
 
 /** Runs in the page: what is sticking out past the viewport? */
 const OVERFLOW_PROBE = `(() => {
@@ -99,9 +46,8 @@ const OVERFLOW_PROBE = `(() => {
   });
 })()`;
 
-const page = await target();
-const cdp = connect(page.webSocketDebuggerUrl);
-await cdp.ready;
+const page = await pageTarget(PORT);
+const cdp = await connect(page.webSocketDebuggerUrl);
 await cdp.send('Page.enable');
 
 let failures = 0;
@@ -115,13 +61,9 @@ for (const path of paths) {
     });
     await cdp.send('Page.navigate', { url: ORIGIN + path });
     // Give the SPA a beat to mount and the fonts a beat to swap in.
-    await new Promise((r) => setTimeout(r, 900));
+    await wait(900);
 
-    const probe = await cdp.send('Runtime.evaluate', {
-      expression: OVERFLOW_PROBE,
-      returnByValue: true,
-    });
-    const { viewport, scrollWidth, wide } = JSON.parse(probe.result.value);
+    const { viewport, scrollWidth, wide } = JSON.parse(await evaluate(cdp, OVERFLOW_PROBE));
     const overflowing = scrollWidth > viewport + 1;
     if (overflowing) failures++;
 

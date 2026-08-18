@@ -9,7 +9,10 @@
     "lint": "oxlint",
     "preview": "vite preview",
     "icons": "node scripts/make-icons.mjs",
-    "shoot": "node scripts/shoot.mjs"
+    "shoot": "node scripts/shoot.mjs",
+    "test": "node --test src/**/*.test.ts",
+    "verify:seam": "node scripts/verify-seam.mjs",
+    "typecheck": "tsc -b"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",
