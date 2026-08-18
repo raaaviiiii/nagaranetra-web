@@ -506,7 +506,13 @@ function ColourClause() {
         information — WCAG 1.4.11 exempts a graphic whose particular presentation is
         essential. That exemption is only honest because the level is never carried by
         colour alone: the threshold line encodes it as the needle&rsquo;s position against the
-        limit, and every place a fill appears, the level word appears with it. Turn the
+        limit, and every place a fill appears, the level word appears with it.{' '}
+        <strong style={{ color: 'var(--fg)', fontWeight: 600 }}>
+          The chip&rsquo;s text label is the AA-compliant channel and the fill is
+          decorative-but-recognisable
+        </strong>{' '}
+        — every &ldquo;text on the … chip&rdquo; row above clears 4.5:1 on its own, so the
+        level is always legible from the word regardless of the fill behind it. Turn the
         page greyscale and nothing becomes unreadable.
       </p>
       <p
@@ -846,8 +852,9 @@ function ButtonClause() {
           className="mt-3 text-[length:var(--size-caption)] leading-relaxed"
           style={{ color: 'var(--fg-muted)' }}
         >
-          The emergency control is the only loud element in the product, and the only one
-          allowed the 64 px target.
+          Red is not "a person acted" — it is "this moment is critical". That is why the
+          emergency request carries it and the register button does not, and it is the only
+          control allowed the 64 px target.
         </p>
       </Specimen>
 
@@ -1017,7 +1024,7 @@ export default function Styleguide() {
       <Clause
         n="5"
         title="Buttons"
-        rule="Blue is what a person does. Red is asking for help, and it is the only loud element in the product. Everything else is achromatic. Press feedback lands on pointer-down; the action itself fires on release, so a press can still be cancelled by sliding off."
+        rule="Action blue means a routine, low-stakes action. Warning red means the moment is critical — the emergency request, and any control reflecting an active Warning-level state. It is not about who acts; it is about what the moment means. Everything else is achromatic. Press feedback lands on pointer-down; the action itself fires on release, so a press can still be cancelled by sliding off."
       >
         <ButtonClause />
       </Clause>

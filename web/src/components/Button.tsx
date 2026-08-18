@@ -1,10 +1,11 @@
 /**
  * Buttons.
  *
- * Three jobs, and the difference between them is a rule, not a preference:
- *   primary    — an ordinary action a person takes. --action blue (CLAUDE.md §5:
- *                "everything a person does uses the action blue").
- *   emergency  — asking for help. The ONE loud element in the product.
+ * Three jobs, and the difference between them is a rule, not a preference (CLAUDE.md §5):
+ *   primary    — a routine, low-stakes action. --action blue.
+ *   emergency  — the moment is critical. Warning red, and the ONE loud element here.
+ *                Red is not "a person acted", it is "this is critical" — which is why the
+ *                emergency request carries it and the register button does not.
  *   quiet      — everything secondary. Achromatic, bordered, no fill.
  *
  * Press feedback fires on pointer-down via :active, not on release, so the control feels
