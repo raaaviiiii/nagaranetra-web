@@ -105,3 +105,124 @@
   border-top: 1px solid var(--hairline);
   margin: 0;
 }
+
+/* Leaflet, dressed in the project's tokens. Leaflet ships its own greys, which would be
+   the only non-token colours in the product. */
+.ng-map .leaflet-container {
+  background: var(--bg-raised);
+  font-family: var(--font-body);
+}
+
+.ng-map .leaflet-control-zoom a {
+  background: var(--bg-raised);
+  color: var(--fg);
+  border-color: var(--edge);
+}
+
+/* The pin. A square in ink, not a teardrop: this is an instrument, and a DivIcon means
+   no image asset is fetched. */
+.ng-pin span {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border: 3px solid var(--fg);
+  background: var(--bg-raised);
+  border-radius: 1px;
+  box-sizing: border-box;
+}
+
+.ng-pin:focus-visible span {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+.ng-map .ng-zone-label {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  color: var(--fg-muted);
+  font-size: var(--size-micro);
+  font-family: var(--font-display);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 0;
+  white-space: nowrap;
+}
+
+.ng-map .ng-zone-label::before {
+  display: none;
+}
+
+/* One question per screen. The step swaps in place, so it fades rather than sliding —
+   a slide would imply a spatial relationship the stepper does not have on a phone. */
+.ng-step {
+  animation: ng-step-in var(--dur-base) var(--ease-out) both;
+}
+
+@keyframes ng-step-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ng-step {
+    animation: ng-step-fade var(--dur-fast) var(--ease-out) both;
+  }
+  @keyframes ng-step-fade {
+    from {
+      opacity: 0;
+    }
+  }
+}
+
+/* A choice in the setup flow. Big target, whole row pressable, ink-on-paper. */
+.ng-choice {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  width: 100%;
+  min-height: 56px;
+  padding: 0.7rem 0.9rem;
+  text-align: left;
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.ng-choice:active {
+  transform: scale(0.985);
+}
+
+.ng-choice[aria-checked='true'],
+.ng-choice[aria-pressed='true'] {
+  border-color: var(--fg);
+  border-width: 2px;
+  padding: calc(0.7rem - 1px) calc(0.9rem - 1px);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ng-choice:hover {
+    border-color: var(--fg-muted);
+  }
+}
+
+/* A plain select, in the project's furniture rather than the platform's. */
+.ng-select {
+  width: 100%;
+  min-height: var(--tap-min);
+  padding: 0 0.75rem;
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+}

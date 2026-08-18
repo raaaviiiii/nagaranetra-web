@@ -28,6 +28,12 @@ export type StoredProfile = Profile & {
   lng: number;
   /** Epoch ms, so we can show "registered on…" and tell a stale profile from a fresh one. */
   updatedAt: number;
+  /**
+   * Which questions the person skipped. Every field in setup is skippable, so some values
+   * are assumptions rather than answers — and a warning built on an assumption has to say
+   * so (CLAUDE.md §2, failures must be loud). Local only; it is not part of the contract.
+   */
+  skipped: string[];
 };
 
 /** One queued outbound call. `clientId` is the idempotency key from contract §6. */
