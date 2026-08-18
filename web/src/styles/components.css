@@ -1,0 +1,107 @@
+/* Component behaviour that inline styles cannot express: press, hover, focus.
+   Everything here is a state, not a look — the look lives in the component. */
+
+.ng-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+  padding: 0 1.1em;
+  border-radius: var(--radius-md);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  /* Named properties, never `all`: `all` animates things you did not mean to. */
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    filter var(--dur-fast) var(--ease-out);
+}
+
+/* Feedback on pointer-down, not on release — :active fires the moment the finger lands. */
+.ng-button:active {
+  transform: scale(0.97);
+}
+
+/* Touch devices fire :hover on tap, which reads as a stuck state. Gate it. */
+@media (hover: hover) and (pointer: fine) {
+  .ng-button:hover {
+    filter: brightness(0.94);
+  }
+  [data-surface='city'] .ng-button:hover {
+    filter: brightness(1.12);
+  }
+}
+
+.ng-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* The emergency control is the one loud element, so it gets the one bit of extra weight
+   in the system: a heavier press and a wider target. Nothing else is allowed this. */
+.ng-button[data-variant='emergency'] {
+  letter-spacing: 0.08em;
+}
+
+/* The scrub control. A native range input, because it is keyboard-operable, announced
+   correctly, and draggable on touch without us reimplementing any of that. Styled as a
+   machined slider: a hairline rail and a square ink handle. */
+.ng-scrub {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: var(--tap-min);
+  background: transparent;
+  cursor: ew-resize;
+}
+
+.ng-scrub::-webkit-slider-runnable-track {
+  height: 2px;
+  background: var(--edge);
+}
+
+.ng-scrub::-moz-range-track {
+  height: 2px;
+  background: var(--edge);
+}
+
+.ng-scrub::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 24px;
+  margin-top: -11px;
+  border: none;
+  border-radius: 1px;
+  background: var(--fg);
+}
+
+.ng-scrub::-moz-range-thumb {
+  width: 14px;
+  height: 24px;
+  border: none;
+  border-radius: 1px;
+  background: var(--fg);
+}
+
+/* The focus ring stays on the input itself, not on ::-webkit-slider-thumb.
+   A thumb-only ring looks tidier, but it depends on a vendor pseudo-element that only
+   some engines expose — and a focus ring that exists in one browser is not a focus ring.
+   The global :focus-visible rule gives this 2px of --action around the whole control. */
+.ng-scrub:focus-visible {
+  outline-offset: 4px;
+}
+
+/* Specimen sheet furniture. The styleguide is a document, so it gets document rules. */
+.sheet-rule {
+  border: 0;
+  border-top: 2px solid var(--fg);
+  margin: 0;
+}
+
+.sheet-hair {
+  border: 0;
+  border-top: 1px solid var(--hairline);
+  margin: 0;
+}

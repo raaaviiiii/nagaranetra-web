@@ -26,8 +26,11 @@ const COPY: Record<ApiStatus, { label: string; detail: string }> = {
   },
 };
 
-export function StatusChip() {
-  const status = useSyncExternalStore(subscribeToStatus, getStatus, getStatus);
+/**
+ * The chip as pure presentation. Exported only so the styleguide can render all three
+ * states side by side; product code uses <StatusChip>, which cannot be told what to say.
+ */
+export function StatusChipView({ status }: { status: ApiStatus }) {
   const { label, detail } = COPY[status];
 
   return (
@@ -54,4 +57,10 @@ export function StatusChip() {
       {label}
     </span>
   );
+}
+
+/** The live chip. Reads the seam directly, so it cannot disagree with the numbers. */
+export function StatusChip() {
+  const status = useSyncExternalStore(subscribeToStatus, getStatus, getStatus);
+  return <StatusChipView status={status} />;
 }

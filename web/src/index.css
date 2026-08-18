@@ -1,6 +1,7 @@
 /* Load order matters: faces, then tokens, then Tailwind, then the theme bridge. */
 @import './styles/fonts.css';
 @import './styles/tokens.css';
+@import './styles/components.css';
 @import 'tailwindcss';
 
 /* Bridge tokens into Tailwind v4 utilities. `inline` keeps the var() reference in the
