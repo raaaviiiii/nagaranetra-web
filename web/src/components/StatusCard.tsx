@@ -110,9 +110,15 @@ export function StatusCard(props: StatusCardProps) {
           <dt className="text-[length:var(--size-caption)]" style={{ color: 'var(--fg-muted)' }}>
             You need
           </dt>
-          <dd className="num text-[length:var(--size-num-lg)]" style={{ fontWeight: 500 }}>
-            {crossesAtMin === null ? 'Not reached' : formatMinutes(crossesAtMin)}
-          </dd>
+          {crossesAtMin === null ? (
+            <dd className="text-[length:var(--size-body)]" style={{ fontWeight: 500 }}>
+              Not reached
+            </dd>
+          ) : (
+            <dd className="num text-[length:var(--size-num-lg)]" style={{ fontWeight: 500 }}>
+              {formatMinutes(crossesAtMin)}
+            </dd>
+          )}
           <dd className="num text-[length:var(--size-num-lg)]" style={{ fontWeight: 500 }}>
             {formatMinutes(leadTimeMin)}
           </dd>

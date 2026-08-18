@@ -13,16 +13,27 @@
  * pointer-down would remove the ability to slide off and cancel, and would not match how
  * the keyboard activates a button.
  */
-import type { ButtonHTMLAttributes, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 
 export type ButtonVariant = 'primary' | 'emergency' | 'quiet';
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type CommonProps = {
   variant?: ButtonVariant;
   /** Emergency controls are bigger: they are pressed in a hurry, possibly one-handed. */
   size?: 'md' | 'lg';
   children: ReactNode;
 };
+
+/**
+ * `href` renders an anchor instead of a button. A control that navigates IS a link, and
+ * wrapping a <button> in an <a> — which is what this replaced — is invalid HTML that
+ * browsers resolve inconsistently, leaving two focus stops for one control.
+ */
+type ButtonProps = CommonProps &
+  (
+    | ({ href?: undefined } & ButtonHTMLAttributes<HTMLButtonElement>)
+    | ({ href: string } & AnchorHTMLAttributes<HTMLAnchorElement>)
+  );
 
 const VARIANT_STYLE: Record<ButtonVariant, React.CSSProperties> = {
   primary: {
@@ -44,19 +55,31 @@ const VARIANT_STYLE: Record<ButtonVariant, React.CSSProperties> = {
 };
 
 export function Button({ variant = 'primary', size = 'md', children, ...rest }: ButtonProps) {
+  const style: React.CSSProperties = {
+    ...VARIANT_STYLE[variant],
+    minHeight: size === 'lg' ? 'var(--tap-sos)' : 'var(--tap-min)',
+    fontSize: size === 'lg' ? 'var(--size-title)' : 'var(--size-body)',
+    ...rest.style,
+  };
+  const className = `ng-button display ${rest.className ?? ''}`;
+
+  if (typeof rest.href === 'string') {
+    const anchorProps = rest as AnchorHTMLAttributes<HTMLAnchorElement>;
+    return (
+      <a
+        {...anchorProps}
+        data-variant={variant}
+        className={className}
+        style={{ ...style, textDecoration: 'none' }}
+      >
+        {children}
+      </a>
+    );
+  }
+
+  const buttonProps = rest as ButtonHTMLAttributes<HTMLButtonElement>;
   return (
-    <button
-      type="button"
-      {...rest}
-      data-variant={variant}
-      className={`ng-button display ${rest.className ?? ''}`}
-      style={{
-        ...VARIANT_STYLE[variant],
-        minHeight: size === 'lg' ? 'var(--tap-sos)' : 'var(--tap-min)',
-        fontSize: size === 'lg' ? 'var(--size-title)' : 'var(--size-body)',
-        ...rest.style,
-      }}
-    >
+    <button type="button" {...buttonProps} data-variant={variant} className={className} style={style}>
       {children}
     </button>
   );

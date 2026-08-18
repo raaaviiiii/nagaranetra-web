@@ -141,6 +141,9 @@ export function ThresholdLine({
    * the edges it aligns to that edge instead — the label still points at its marker, and
    * nothing is trimmed.
    */
+  /** An empty gauge has nothing to read, so it prints no reading. */
+  const showsReading = current > domain.min;
+
   const labelAlign = (percent: number) =>
     percent < 12 ? 'translateX(0)' : percent > 88 ? 'translateX(-100%)' : 'translateX(-50%)';
 
@@ -264,8 +267,11 @@ export function ThresholdLine({
         </div>
       )}
 
-      {/* The reading, below the needle. Tabular, so it does not jitter as it ticks. */}
-      {size !== 'sm' && (
+      {/* The reading, below the needle. Tabular, so it does not jitter as it ticks.
+          Suppressed when the needle is sitting on the floor of the scale: "0 cm" pinned to
+          the left edge reads as a broken label rather than as a measurement, and an empty
+          instrument already says there is nothing to read. */}
+      {size !== 'sm' && showsReading && (
         <div className="relative mt-1.5 h-[1.3em]">
           <div
             className="absolute top-0 whitespace-nowrap"
@@ -289,10 +295,10 @@ export function ThresholdLine({
           style={{ color: 'var(--fg-muted)' }}
           aria-hidden="true"
         >
-          <span style={{ visibility: currentPercent < 14 ? 'hidden' : undefined }}>
+          <span style={{ visibility: showsReading && currentPercent < 14 ? 'hidden' : undefined }}>
             {formatValue(domain.min, unit)}
           </span>
-          <span style={{ visibility: currentPercent > 86 ? 'hidden' : undefined }}>
+          <span style={{ visibility: showsReading && currentPercent > 86 ? 'hidden' : undefined }}>
             {formatValue(domain.max, unit)}
           </span>
         </div>
