@@ -12,7 +12,8 @@
     "shoot": "node scripts/shoot.mjs",
     "test": "node --test src/**/*.test.ts",
     "verify:seam": "node scripts/verify-seam.mjs",
-    "typecheck": "tsc -b"
+    "typecheck": "tsc -b",
+    "verify:a11y": "node scripts/verify-a11y.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

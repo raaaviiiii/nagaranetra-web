@@ -20,7 +20,11 @@ const WIDTHS = [
   { name: 'phone', width: 390, height: 844 },
   { name: 'desktop', width: 1440, height: 900 },
 ];
-const paths = process.argv.slice(2).length ? process.argv.slice(2) : ['/'];
+const args = process.argv.slice(2);
+/** --full captures the whole scrollable page, not just the viewport. */
+const fullPage = args.includes('--full');
+const paths = args.filter((a) => !a.startsWith('--'));
+if (paths.length === 0) paths.push('/');
 
 const profile = '.shots/.chrome-profile';
 mkdirSync('.shots', { recursive: true });
@@ -67,7 +71,17 @@ for (const path of paths) {
     const overflowing = scrollWidth > viewport + 1;
     if (overflowing) failures++;
 
-    const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+    // A specimen sheet is taller than any viewport, so reviewing it means capturing it whole.
+    const pageHeight = fullPage
+      ? await evaluate(cdp, 'document.documentElement.scrollHeight')
+      : size.height;
+    const shot = await cdp.send('Page.captureScreenshot', {
+      format: 'png',
+      captureBeyondViewport: fullPage,
+      ...(fullPage
+        ? { clip: { x: 0, y: 0, width: size.width, height: pageHeight, scale: 1 } }
+        : {}),
+    });
     const file = `.shots/${size.name}${path.replace(/\//g, '-') || '-index'}.png`;
     writeFileSync(file, Buffer.from(shot.data, 'base64'));
 
