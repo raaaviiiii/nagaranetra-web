@@ -133,27 +133,27 @@ const KOCHI_ZONES: ZoneModel[] = [
  * something real to draw, and matches the city config in contract §3 verbatim:
  *   { "city": "wayanad", "hazards": ["landslide", "flood"], "zones": "wayanad_zones.json" }
  *
- * Town names are district towns, not the specific hamlets lost in the 2024 landslides.
- * Simulating a fresh disaster onto the names of places that were actually destroyed is
- * not a thing to do casually in a demo; if we decide it belongs in the pitch, that is a
- * deliberate decision to take together, not a default.
+ * Real geography, placeholder names: the coordinates and the terrain parameters are the
+ * district's, the ward names are not. Simulating a fresh disaster onto the names of real
+ * places — some of which lost people in 2024 — is not a default to take casually. Naming
+ * is a decision for the pitch, made deliberately, not a side effect of writing fixtures.
  */
 const WAYANAD_ZONES: ZoneModel[] = [
-  { id: 'kalpetta', name: 'Kalpetta', name_ml: 'കൽപ്പറ്റ', lat: 11.607, lng: 76.083, population: 31000,
+  { id: 'ward-1', name: 'Wayanad Ward 1', name_ml: 'വയനാട് വാർഡ് 1', lat: 11.607, lng: 76.083, population: 31000,
     susceptibility: 0.58, soilCapacityMm: 90, drainageMmH: 26, canalBackup: 0.10, ponding: 0.80, antecedentH: 3.2, slopeDeg: 14, soilDepthMm: 1400 },
-  { id: 'vythiri', name: 'Vythiri', name_ml: 'വൈത്തിരി', lat: 11.551, lng: 76.038, population: 12000,
+  { id: 'ward-2', name: 'Wayanad Ward 2', name_ml: 'വയനാട് വാർഡ് 2', lat: 11.551, lng: 76.038, population: 12000,
     susceptibility: 0.54, soilCapacityMm: 96, drainageMmH: 28, canalBackup: 0.08, ponding: 0.74, antecedentH: 3.6, slopeDeg: 27, soilDepthMm: 1600 },
-  { id: 'meppadi', name: 'Meppadi', name_ml: 'മേപ്പാടി', lat: 11.548, lng: 76.135, population: 18000,
+  { id: 'demo-landslide', name: 'Demo Landslide Zone', name_ml: 'ഡെമോ ഉരുൾപൊട്ടൽ മേഖല', lat: 11.548, lng: 76.135, population: 18000,
     susceptibility: 0.56, soilCapacityMm: 92, drainageMmH: 27, canalBackup: 0.09, ponding: 0.78, antecedentH: 3.8, slopeDeg: 31, soilDepthMm: 1750 },
-  { id: 'ambalavayal', name: 'Ambalavayal', name_ml: 'അമ്പലവയൽ', lat: 11.622, lng: 76.207, population: 21000,
+  { id: 'ward-3', name: 'Wayanad Ward 3', name_ml: 'വയനാട് വാർഡ് 3', lat: 11.622, lng: 76.207, population: 21000,
     susceptibility: 0.52, soilCapacityMm: 98, drainageMmH: 29, canalBackup: 0.07, ponding: 0.72, antecedentH: 3.0, slopeDeg: 19, soilDepthMm: 1500 },
-  { id: 'bathery', name: 'Sulthan Bathery', name_ml: 'സുൽത്താൻ ബത്തേരി', lat: 11.664, lng: 76.261, population: 26000,
+  { id: 'ward-4', name: 'Wayanad Ward 4', name_ml: 'വയനാട് വാർഡ് 4', lat: 11.664, lng: 76.261, population: 26000,
     susceptibility: 0.50, soilCapacityMm: 102, drainageMmH: 30, canalBackup: 0.06, ponding: 0.70, antecedentH: 2.8, slopeDeg: 9, soilDepthMm: 1300 },
-  { id: 'mananthavady', name: 'Mananthavady', name_ml: 'മാനന്തവാടി', lat: 11.801, lng: 76.004, population: 24000,
+  { id: 'ward-5', name: 'Wayanad Ward 5', name_ml: 'വയനാട് വാർഡ് 5', lat: 11.801, lng: 76.004, population: 24000,
     susceptibility: 0.55, soilCapacityMm: 94, drainageMmH: 27, canalBackup: 0.09, ponding: 0.76, antecedentH: 3.1, slopeDeg: 12, soilDepthMm: 1350 },
-  { id: 'thariyode', name: 'Thariyode', name_ml: 'തരിയോട്', lat: 11.618, lng: 75.990, population: 9000,
+  { id: 'ward-6', name: 'Wayanad Ward 6', name_ml: 'വയനാട് വാർഡ് 6', lat: 11.618, lng: 75.990, population: 9000,
     susceptibility: 0.53, soilCapacityMm: 97, drainageMmH: 28, canalBackup: 0.07, ponding: 0.73, antecedentH: 3.5, slopeDeg: 23, soilDepthMm: 1550 },
-  { id: 'padinjarathara', name: 'Padinjarathara', name_ml: 'പടിഞ്ഞാറത്തറ', lat: 11.700, lng: 75.976, population: 14000,
+  { id: 'ward-7', name: 'Wayanad Ward 7', name_ml: 'വയനാട് വാർഡ് 7', lat: 11.700, lng: 75.976, population: 14000,
     susceptibility: 0.57, soilCapacityMm: 93, drainageMmH: 26, canalBackup: 0.11, ponding: 0.79, antecedentH: 3.3, slopeDeg: 17, soilDepthMm: 1450 },
 ];
 

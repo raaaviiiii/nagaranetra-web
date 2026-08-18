@@ -66,7 +66,7 @@ test('determinism: identical inputs produce identical output, every endpoint', (
     }
   }
   for (const hazard of HAZARDS) {
-    const request = hazard === 'flood' ? exampleRequest() : exampleRequest({ city: 'wayanad', zoneId: 'meppadi', hazard });
+    const request = hazard === 'flood' ? exampleRequest() : exampleRequest({ city: 'wayanad', zoneId: 'demo-landslide', hazard });
     assert.deepEqual(mock.threshold(request), mock.threshold(request));
   }
 
