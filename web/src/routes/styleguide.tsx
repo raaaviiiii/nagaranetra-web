@@ -23,6 +23,11 @@ import { Toggle } from '../components/Toggle';
 import { Select } from '../components/Select';
 import { Stat } from '../components/Stat';
 import { SectionHeading } from '../components/SectionHeading';
+import { Panel } from '../components/Panel';
+import { CapacityBar } from '../components/CapacityBar';
+import { TextField, FileField } from '../components/Field';
+import { HouseSection } from '../components/HouseSection';
+import { PageHeader } from '../components/Page';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LevelChip } from '../components/LevelChip';
@@ -881,6 +886,65 @@ function ButtonClause() {
   );
 }
 
+/** The page shell and the surfaces that give a screen structure. */
+function StructureClause() {
+  return (
+    <div className="space-y-6">
+      <Specimen label="Page header — the masthead every product screen wears">
+        <PageHeader
+          label="During"
+          title="Shelters near you"
+          lead="One line of orientation, in the resident's terms."
+          aside={
+            <>
+              <Stat label="With space" value="3 of 4" />
+              <Stat label="Places free" value="412" />
+            </>
+          }
+        />
+      </Specimen>
+
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Panel heading="Panel with a heading" aside={<span className="ng-label">aside</span>}>
+          <p style={{ fontSize: 'var(--size-body)', lineHeight: 1.5 }}>
+            A raised surface with a hairline edge. This is what holds a list, a form or a
+            figure, so a screen has layers rather than one flat sheet.
+          </p>
+        </Panel>
+
+        <Panel heading="Capacity">
+          <CapacityBar occupancy={254} capacity={450} />
+          <div style={{ marginTop: 'var(--space-lg)' }}>
+            <CapacityBar occupancy={200} capacity={200} />
+          </div>
+        </Panel>
+
+        <Panel heading="Fields">
+          <TextField id="sg-depth" label="How deep did the water get?" value="" onChange={() => {}} placeholder="60" />
+          <div style={{ marginTop: 'var(--space-lg)' }}>
+            <FileField id="sg-photos" label="Add photos" hint="One of each room affected." files={[]} onFiles={() => {}} />
+          </div>
+        </Panel>
+
+        <Panel heading="Illustration">
+          <HouseSection level="alert" />
+          <p
+            style={{
+              marginTop: 'var(--space-md)',
+              fontSize: 'var(--size-caption)',
+              color: 'var(--fg-muted)',
+              lineHeight: 1.55,
+            }}
+          >
+            The product's argument, drawn: the same water, a different answer per floor.
+            Achromatic except the water, which carries the level.
+          </p>
+        </Panel>
+      </div>
+    </div>
+  );
+}
+
 /** The controls a question is answered with, plus the label/number pair. */
 function ChoosingClause() {
   const [floor, setFloor] = useState(0);
@@ -1075,6 +1139,14 @@ export default function Styleguide() {
 
       <Clause
         n="6"
+        title="Page structure"
+        rule="Every product screen wears the same shell: a stamped label, a title, a heavy rule, one line of orientation, and facts on the right. Content runs to 72rem, not a narrow centred column — a screen that is mostly margin reads as unfinished, not as restrained. Panels layer structure on top of the page instead of leaving flat white space."
+      >
+        <StructureClause />
+      </Clause>
+
+      <Clause
+        n="7"
         title="Choosing"
         rule="A question is answered by choosing, so the choice is the largest target on the screen and the whole row is pressable. Single-choice rows advance on selection; toggles wait, because more than one answer can be true at once."
       >
@@ -1082,7 +1154,7 @@ export default function Styleguide() {
       </Clause>
 
       <Clause
-        n="7"
+        n="8"
         title="Chips"
         rule="A chip states a fact about the system: what the hazard level is, or where the data came from. The data-source chip is never hidden and has no dismiss control."
       >
@@ -1090,7 +1162,7 @@ export default function Styleguide() {
       </Clause>
 
       <Clause
-        n="8"
+        n="9"
         title="Empty and error states"
         rule="An empty screen is an invitation to act. An error says what happened, what it means for this person, and the one thing that fixes it — never 'try again later'."
       >
@@ -1098,7 +1170,7 @@ export default function Styleguide() {
       </Clause>
 
       <Clause
-        n="9"
+        n="10"
         title="Motion"
         rule="One orchestrated moment: the threshold crossing. The fill, the needle and the limit stamp are driven by a single spring, so they land on the same beat by construction. Everything else is a plain transition on a named property. Under prefers-reduced-motion, movement drops and opacity survives."
       >

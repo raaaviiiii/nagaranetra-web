@@ -15,7 +15,8 @@
     "typecheck": "tsc -b",
     "verify:a11y": "node scripts/verify-a11y.mjs",
     "verify:console": "node scripts/verify-console.mjs",
-    "basemap": "node scripts/fetch-basemap.mjs"
+    "basemap": "node scripts/fetch-basemap.mjs",
+    "verify:bundles": "node scripts/verify-bundles.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -65,8 +65,14 @@ const VARIANT_STYLE: Record<ButtonVariant, React.CSSProperties> = {
 };
 
 export function Button({ variant = 'primary', size = 'md', children, ...rest }: ButtonProps) {
+  /* A disabled control is not a faded version of an enabled one. Fading the emergency red
+     produces a washed-out pink that reads as broken; a disabled control should read as
+     inert, which is what the quiet style already says. */
+  const disabled = 'disabled' in rest && rest.disabled === true;
+  const applied = disabled ? 'quiet' : variant;
+
   const style: React.CSSProperties = {
-    ...VARIANT_STYLE[variant],
+    ...VARIANT_STYLE[applied],
     minHeight: size === 'lg' ? 'var(--tap-sos)' : 'var(--tap-min)',
     fontSize: size === 'lg' ? 'var(--size-lead)' : 'var(--size-body)',
     ...rest.style,
@@ -78,7 +84,7 @@ export function Button({ variant = 'primary', size = 'md', children, ...rest }: 
     return (
       <a
         {...anchorProps}
-        data-variant={variant}
+        data-variant={applied}
         className={className}
         style={{ ...style, textDecoration: 'none' }}
       >
@@ -89,7 +95,7 @@ export function Button({ variant = 'primary', size = 'md', children, ...rest }: 
 
   const buttonProps = rest as ButtonHTMLAttributes<HTMLButtonElement>;
   return (
-    <button type="button" {...buttonProps} data-variant={variant} className={className} style={style}>
+    <button type="button" {...buttonProps} data-variant={applied} className={className} style={style}>
       {children}
     </button>
   );

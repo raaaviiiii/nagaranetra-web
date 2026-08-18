@@ -326,3 +326,30 @@
 .ng-nav a[aria-current='page'] {
   color: var(--fg);
 }
+
+/* Text and photo inputs. Same furniture as .ng-select so a form reads as one thing. */
+.ng-input {
+  width: 100%;
+  min-height: 3.5rem;
+  margin-top: var(--space-xs);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--bg-raised);
+  color: var(--fg);
+  border: 1px solid var(--edge);
+  border-radius: var(--radius-md);
+  font-family: var(--font-body);
+  font-size: var(--size-body);
+  line-height: 1.5;
+}
+
+.ng-input::placeholder {
+  color: var(--fg-muted);
+  opacity: 0.7;
+}
+
+/* A file input is hidden behind its label, which is styled as a control. */
+.ng-button[data-variant='quiet']:has(input:focus-visible),
+label.ng-button:focus-within {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}

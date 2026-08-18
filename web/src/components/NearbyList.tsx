@@ -27,12 +27,19 @@ function formatDistance(metres: number): string {
   return metres < 1000 ? `${metres} m` : `${(metres / 1000).toFixed(1)} km`;
 }
 
-export function NearbyList({ services }: { services: NearbyService[] }) {
+export function NearbyList({
+  services,
+  heading = 'Nearest help',
+}: {
+  services: NearbyService[];
+  /** Null when a surrounding panel already names this list. */
+  heading?: string | null;
+}) {
   return (
     <section>
-      <SectionHeading>Nearest help</SectionHeading>
+      {heading && <SectionHeading>{heading}</SectionHeading>}
 
-      <ul style={{ marginTop: 'var(--space-md)' }}>
+      <ul style={{ marginTop: heading ? 'var(--space-md)' : 0 }}>
         {services.map((service) => (
           <li key={`${service.type}-${service.name}`} style={{ borderTop: '1px solid var(--hairline)' }}>
             <a

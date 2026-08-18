@@ -23,6 +23,10 @@ import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { NearbyList } from '../components/NearbyList';
 import { StatusCard } from '../components/StatusCard';
+import { HouseSection } from '../components/HouseSection';
+import { Page, PageHeader } from '../components/Page';
+import { Panel } from '../components/Panel';
+import { Stat } from '../components/Stat';
 
 // Recharts is a third of the bundle and the chart is evidence, not the instruction.
 // The status card paints first; the chart arrives a beat later.
@@ -111,12 +115,35 @@ export default function Dashboard() {
   if (state.kind === 'none') {
     return (
       <Page>
-        <EmptyState
-          heading="Tell us about your home"
-          body="Once we know your floor and your building, every warning after this one is about your house — not your district. Under a minute, and you can skip anything."
-          actionLabel="Register your household"
-          href="/setup"
+        <PageHeader
+          label="Your household"
+          title="Warnings about your house, not your district"
+          lead="Everyone in a district gets the same sentence today, whether they live on a ground floor or a third floor. Tell us about your home once and every warning after this one is worked out for it."
         />
+        <div className="grid items-start gap-5 lg:grid-cols-2">
+          <Panel>
+            <EmptyState
+              heading="Tell us about your home"
+              body="Your floor and your building change the answer more than anything else. Under a minute, and you can skip any question."
+              actionLabel="Register your household"
+              href="/setup"
+            />
+          </Panel>
+          <Panel heading="Why the floor matters">
+            <HouseSection level="alert" />
+            <p
+              style={{
+                marginTop: 'var(--space-md)',
+                fontSize: 'var(--size-caption)',
+                color: 'var(--fg-muted)',
+                lineHeight: 1.55,
+              }}
+            >
+              The same 60 cm of water on the same street. The ground floor is in trouble and
+              the floors above it are not — so they should not be told the same thing.
+            </p>
+          </Panel>
+        </div>
       </Page>
     );
   }
@@ -143,6 +170,22 @@ export default function Dashboard() {
 
   return (
     <Page>
+      <PageHeader
+        label={`Your household · ${titleCase(zoneName)}`}
+        title="What this means for your house"
+        aside={
+          <>
+            <Stat label="Level" value={answer.level === 'none' ? 'No warning' : titleCase(answer.level)} />
+            <Stat
+              label={answer.crossesAtMin === null ? 'Your limit' : 'Crosses in'}
+              value={answer.crossesAtMin === null ? 'Not reached' : `${answer.crossesAtMin} min`}
+            />
+          </>
+        }
+      />
+
+      <div className="grid items-start gap-5 lg:grid-cols-[1.15fr_0.85fr]">
+        <div className="grid gap-5">
       <StatusCard
         hazardLabel={`Flood · ${titleCase(zoneName)}`}
         level={answer.level}
@@ -158,7 +201,7 @@ export default function Dashboard() {
       />
 
       {/* Directly under the instruction, because it is what the instruction leads to. */}
-      <div style={{ marginTop: 'var(--space-lg)' }}>
+      <div>
         <Button variant="emergency" size="lg" href="/help" style={{ width: '100%' }}>
           Get help
         </Button>
@@ -179,7 +222,6 @@ export default function Dashboard() {
       {assumptions.length > 0 && (
         <p
           style={{
-            marginTop: 'var(--space-lg)',
             fontSize: 'var(--size-caption)',
             color: 'var(--fg-muted)',
             lineHeight: 1.5,
@@ -193,7 +235,10 @@ export default function Dashboard() {
         </p>
       )}
 
-      <div style={{ marginTop: 'var(--space-2xl)' }}>
+        </div>
+
+        <div className="grid gap-5" style={{ alignContent: 'start' }}>
+          <Panel>
         <Suspense fallback={<div style={{ height: 200 }} aria-hidden="true" />}>
           <ForecastSparkline
             forecast={forecast}
@@ -203,10 +248,14 @@ export default function Dashboard() {
             unit={answer.unit}
           />
         </Suspense>
-      </div>
+          </Panel>
 
-      <div style={{ marginTop: 'var(--space-2xl)' }}>
-        <NearbyList services={services} />
+          <Panel heading="Nearest help" padded={false}>
+            <div style={{ padding: '0 var(--space-lg) var(--space-md)' }}>
+              <NearbyList services={services} heading={null} />
+            </div>
+          </Panel>
+        </div>
       </div>
 
       <p
@@ -221,21 +270,6 @@ export default function Dashboard() {
         decides and acts.
       </p>
     </Page>
-  );
-}
-
-/**
- * The page frame. One column, generous margins, and the same rhythm on every state — a
- * loading screen that sits at a different width than the loaded one reads as a jump.
- */
-function Page({ children }: { children: React.ReactNode }) {
-  return (
-    <section
-      className="mx-auto w-full max-w-[38rem]"
-      style={{ padding: 'var(--space-xl) var(--gutter) var(--space-2xl)' }}
-    >
-      {children}
-    </section>
   );
 }
 

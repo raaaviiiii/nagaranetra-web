@@ -26,6 +26,8 @@ import { Button } from '../components/Button';
 import { LevelChip } from '../components/LevelChip';
 import { ThresholdLine } from '../components/ThresholdLine';
 import { Choice } from '../components/Choice';
+import { Panel } from '../components/Panel';
+import { Stat } from '../components/Stat';
 import { Toggle } from '../components/Toggle';
 import { SectionHeading } from '../components/SectionHeading';
 import { Surface } from '../components/Surface';
@@ -266,6 +268,13 @@ export default function Setup() {
               onToggle={() => answer('hasLimitedMobility', !profile.hasLimitedMobility)}
             />
           </div>
+          <div style={{ marginTop: 'var(--space-xl)' }}>
+            <LeadTimePreview
+              profile={profile}
+              cityId={city?.id ?? DEFAULT_CITY}
+              zoneId={place?.zone.id ?? city?.zones[0]?.id ?? 'kaloor'}
+            />
+          </div>
         </StepShell>
       );
 
@@ -294,6 +303,13 @@ export default function Setup() {
                 answer('hasVehicle', false);
                 advance();
               }}
+            />
+          </div>
+          <div style={{ marginTop: 'var(--space-xl)' }}>
+            <LeadTimePreview
+              profile={profile}
+              cityId={city?.id ?? DEFAULT_CITY}
+              zoneId={place?.zone.id ?? city?.zones[0]?.id ?? 'kaloor'}
             />
           </div>
         </StepShell>
@@ -480,10 +496,12 @@ function FloorStep({
 }
 
 /**
- * A number you can set with a thumb or with the keyboard.
+ * A number you can set with a thumb, a quick pick, or the keyboard.
  *
- * The value is the dominant thing on this screen after the question, so it is set at the
- * hero number size and the controls beside it stay quiet.
+ * The quick picks are not decoration: most households are between one and six people, so
+ * the common answer is one tap rather than five presses of a plus button. They also give
+ * the step something to be — a lone number between two small controls is the thinnest
+ * screen in the flow.
  */
 function Counter({
   value,
@@ -499,38 +517,112 @@ function Counter({
   onChange: (value: number) => void;
 }) {
   const step = (delta: number) => onChange(Math.min(max, Math.max(min, value + delta)));
+  const picks = [1, 2, 3, 4, 5, 6, 7, 8];
 
   return (
-    <div className="flex items-center" style={{ gap: 'var(--space-lg)' }}>
-      <Button
-        variant="quiet"
-        size="lg"
-        onClick={() => step(-1)}
-        disabled={value <= min}
-        aria-label={`One fewer person. Currently ${value}.`}
-        style={{ minWidth: 'var(--tap-sos)' }}
-      >
-        −
-      </Button>
+    <Panel>
+      <div className="flex items-center" style={{ gap: 'var(--space-lg)' }}>
+        <Button
+          variant="quiet"
+          size="lg"
+          onClick={() => step(-1)}
+          disabled={value <= min}
+          aria-label={`One fewer person. Currently ${value}.`}
+          style={{ minWidth: 'var(--tap-sos)' }}
+        >
+          −
+        </Button>
 
-      <output
-        className="num flex-1 text-center"
-        style={{ fontSize: 'var(--size-num-hero)', fontWeight: 500, lineHeight: 1 }}
-        aria-label={`${label}: ${value}`}
-      >
-        {value}
-      </output>
+        <output
+          className="num flex-1 text-center"
+          style={{ fontSize: 'var(--size-num-hero)', fontWeight: 500, lineHeight: 1 }}
+          aria-label={`${label}: ${value}`}
+        >
+          {value}
+        </output>
 
-      <Button
-        variant="quiet"
-        size="lg"
-        onClick={() => step(1)}
-        disabled={value >= max}
-        aria-label={`One more person. Currently ${value}.`}
-        style={{ minWidth: 'var(--tap-sos)' }}
+        <Button
+          variant="quiet"
+          size="lg"
+          onClick={() => step(1)}
+          disabled={value >= max}
+          aria-label={`One more person. Currently ${value}.`}
+          style={{ minWidth: 'var(--tap-sos)' }}
+        >
+          +
+        </Button>
+      </div>
+
+      <div
+        className="grid grid-cols-4 sm:grid-cols-8"
+        style={{ gap: 'var(--space-sm)', marginTop: 'var(--space-lg)' }}
+        role="group"
+        aria-label="Common household sizes"
       >
-        +
-      </Button>
-    </div>
+        {picks.map((n) => (
+          <Button
+            key={n}
+            variant={value === n ? 'primary' : 'quiet'}
+            onClick={() => onChange(n)}
+            aria-label={`${n} people`}
+          >
+            {n === 8 ? '8+' : n}
+          </Button>
+        ))}
+      </div>
+    </Panel>
+  );
+}
+
+/**
+ * What the answers so far mean for this household's lead time.
+ *
+ * The number comes from the seam, not from copy that restates the model — the questions
+ * about who lives here and whether there is a vehicle change it, and watching it move is
+ * the reason those questions are worth answering.
+ */
+function LeadTimePreview({
+  profile,
+  cityId,
+  zoneId,
+}: {
+  profile: Profile;
+  cityId: string;
+  zoneId: string;
+}) {
+  const [minutes, setMinutes] = useState<number | null>(null);
+  const { buildingType, floorLevel, householdSize, hasElderly, hasLimitedMobility, hasVehicle, language } = profile;
+
+  useEffect(() => {
+    let live = true;
+    void postThreshold({
+      city: cityId,
+      zoneId,
+      hazard: 'flood',
+      intensity: PREVIEW_INTENSITY,
+      profile: { buildingType, floorLevel, householdSize, hasElderly, hasLimitedMobility, hasVehicle, language },
+    }).then((answer) => live && setMinutes(answer.leadTimeMin));
+    return () => {
+      live = false;
+    };
+  }, [cityId, zoneId, buildingType, floorLevel, householdSize, hasElderly, hasLimitedMobility, hasVehicle, language]);
+
+  return (
+    <Panel heading="What this changes">
+      <div className="flex items-start justify-between" style={{ gap: 'var(--space-lg)' }}>
+        <p
+          style={{
+            fontSize: 'var(--size-body)',
+            lineHeight: 1.5,
+            color: 'var(--fg-muted)',
+            maxWidth: '34ch',
+          }}
+        >
+          Your warning has to arrive this far ahead of the water, so there is time to move
+          everyone — not just time to know.
+        </p>
+        <Stat label="You would need" value={minutes === null ? '—' : `${minutes} min`} />
+      </div>
+    </Panel>
   );
 }
