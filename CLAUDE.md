@@ -129,17 +129,23 @@ They should look like two different products, because they are.
 --ink-dark:     #EAF0F2;
 
 /* IMD warning ladder — the only chromatic colours */
---level-none:    #128A4E;
+--level-none:    #11824A;   /* was #128A4E: no text colour cleared AA on it */
 --level-watch:   #F2C200;
 --level-alert:   #EE7415;
 --level-warning: #CE1B2C;
 
-/* Human action — deliberately outside the hazard ladder */
+/* Dark-surface variants, for the same reason --act has --act-dark */
+--level-none-dark:    #149755;
+--level-warning-dark: #E74B5A;
+
+/* Routine action — deliberately outside the hazard ladder */
 --act:           #1B4FD8;
 --act-dark:      #5B8CFF;
 ```
 
-**Everything the system predicts uses the hazard ladder. Everything a person does uses the action blue.**
+**Everything the system predicts uses the hazard ladder.**
+
+**Action blue means a routine, low-stakes action. Warning red means the situation is critical — reserved for the emergency request and any UI reflecting an active Warning-level state. It is not about who acts; it is about what the moment means.**
 
 ### Type
 
