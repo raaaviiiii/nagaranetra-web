@@ -191,6 +191,39 @@ Scattered animation is the clearest tell of AI-generated UI. Cut anything decora
 | Map | `leaflet`, self-hosted tiles |
 | 3D | `three` |
 
+### Animation tooling — two engines, strictly scoped, never mixed on one screen
+
+**Functional surfaces** — dashboard, SOS, anything showing the threshold line:
+`motion.dev` only. Springs for gesture-driven interaction, interruptible at any instant,
+animating from the current presentation value and never from the target. **No scroll
+choreography here.** The standing rule on these surfaces is instant: zero animation delay
+between a person and an action.
+
+**Marketing / informational surfaces** — landing entry, city switcher, the 3D scene's
+first reveal: `gsap` + ScrollTrigger for scroll-pinned reveals, `lenis` for smooth scroll.
+**Lenis must be wired to respect `prefers-reduced-motion` explicitly — it does not do this
+by default.** Motion Primitives (built on `motion.dev`) may be used here for in-view text
+reveals, since it is the same underlying engine as the functional surfaces and will not
+fight with it.
+
+**Rive** — reserved for ONE OR TWO small interactive vector icons where state-driven
+animation genuinely earns its place: the emergency button's live pulse, or a hazard icon
+that shifts with level. It is not a general animation tool. **Do not reach for it more
+than twice in the whole product.**
+
+**Design-time only, never runtime dependencies:**
+
+- **haikei.app** — generate one or two organic SVG background assets for the marketing
+  hero. Export as static files; do not ship the library.
+- **realtimecolors.com** — visually sanity-check the IMD ladder against paper and base
+  backgrounds before trusting the computed contrast table already in the styleguide.
+- **Kokonut UI** — a reference gallery only. Look at two or three components for pattern
+  ideas, then build inside the existing token system. **Do not install it as a
+  dependency.**
+
+Install: `gsap`, `lenis`, `motion-primitives` (or copy the specific components needed),
+`@rive-app/react-canvas`.
+
 ---
 
 ## 6. The 3D scene
