@@ -18,11 +18,23 @@
   --ink-dark:     #EAF0F2;
 
   /* ---- IMD warning ladder — the only chromatic colours -------------------
-     Everything the system PREDICTS is coloured from this ladder and nothing else. */
-  --level-none:    #128A4E;
+     Everything the system PREDICTS is coloured from this ladder and nothing else.
+
+     --level-none is CLAUDE.md §5's #128A4E darkened by one step. At the original
+     value there was no legal text colour to put on it: ink gave 4.06:1 and white
+     gave 4.40:1, both under WCAG AA's 4.5. At #11824A white reaches 4.87:1 and the
+     colour itself reaches 4.53:1 as text on paper. Hue and saturation are untouched.
+     The other three are exactly as specified. */
+  --level-none:    #11824A;
   --level-watch:   #F2C200;
   --level-alert:   #EE7415;
   --level-warning: #CE1B2C;
+
+  /* Dark-surface variants, for the same reason --act has --act-dark: on #0C1013 the
+     light-surface green and red only reach 4.34:1 and 3.47:1 as text. Watch and alert
+     already pass on dark (11.37:1 and 6.50:1) and are therefore left alone. */
+  --level-none-dark:    #149755;
+  --level-warning-dark: #E74B5A;
 
   /* ---- Human action — deliberately outside the hazard ladder --------------
      Everything a PERSON does is this blue. --act on light, --act-dark on dark. */
@@ -39,6 +51,24 @@
   --fg-muted:      var(--ink-muted);
   --hairline:      var(--rule);
   --action:        var(--act);
+
+  /* The ladder, surface-bound. Components read --lvl-* and never the raw palette, so
+     the city surface swaps in its variants without a single component branching.
+     --on-* is the one text colour that is legal on that fill; see §2 of /styleguide,
+     which computes every one of these ratios live in the browser. */
+  --lvl-none:      var(--level-none);
+  --lvl-watch:     var(--level-watch);
+  --lvl-alert:     var(--level-alert);
+  --lvl-warning:   var(--level-warning);
+  --on-none:       var(--paper-raised);
+  --on-watch:      var(--ink);
+  --on-alert:      var(--ink);
+  --on-warning:    var(--paper-raised);
+
+  /* A hairline is a separator, and WCAG does not hold separators to a ratio. A border
+     that carries meaning — the edge of a control, the frame of an instrument — does.
+     --edge is that border: 5.71:1 on paper, where --rule is 1.22:1. */
+  --edge:          var(--ink-muted);
 
   /* ---- Type (CLAUDE.md §5) ------------------------------------------------
      Malayalam sits ahead of the latin body face in the body stack: its
@@ -62,6 +92,23 @@
   --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
   --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
 
+  /* ---- Type scale ---------------------------------------------------------
+     Named by job, not by size, so a screen asks for "the action" and gets whatever
+     the system currently says an action is. Fluid sizes are clamped: the citizen
+     surface is read at arm's length on a phone and across a room on a projector. */
+  --size-display:  clamp(2.25rem, 9vw, 3.5rem);  /* page titles */
+  --size-status:   clamp(1.75rem, 7vw, 2.75rem); /* the level word: WARNING */
+  --size-action:   clamp(1.5rem, 5.5vw, 2.125rem); /* the instruction — the largest
+                                                      element on a citizen screen */
+  --size-title:    1.25rem;
+  --size-body:     1.0625rem;
+  --size-small:    0.9375rem;
+  --size-caption:  0.8125rem;
+  --size-micro:    0.6875rem;   /* stamped labels, chips, clause numbers */
+  --size-num-xl:   clamp(2rem, 8vw, 3rem);
+  --size-num-lg:   1.5rem;
+  --size-num-md:   1rem;
+
   /* ---- Geometry ----------------------------------------------------------- */
   --radius-sm: 2px;
   --radius-md: 4px;   /* notice-board corners, not app-card corners */
@@ -80,6 +127,14 @@
   --fg-muted:  color-mix(in srgb, var(--ink-dark) 62%, var(--base));
   --hairline:  var(--rule-dark);
   --action:    var(--act-dark);
+  --lvl-none:    var(--level-none-dark);
+  --lvl-warning: var(--level-warning-dark);
+  /* The dark-surface fills are brighter, so ink is what is legal on them. */
+  --on-none:     var(--ink);
+  --on-warning:  var(--ink);
+  /* 55% measured 2.74:1 against --base and failed. 72% clears 3:1 with headroom;
+     §2 of /styleguide measures it every time the page loads. */
+  --edge:        color-mix(in srgb, var(--ink-dark) 72%, var(--base));
 }
 
 html {
