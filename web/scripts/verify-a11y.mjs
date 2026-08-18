@@ -99,8 +99,28 @@ const stillColoured = await evaluate(
 check(Boolean(stillColoured), 'the level colour survives reduced motion');
 await cdp.send('Emulation.setEmulatedMedia', { features: [] });
 
+/** Register a household, so the dashboard under test is the real one and not the empty state. */
+async function seedHousehold() {
+  await cdp.send('Page.navigate', { url: `${ORIGIN}/` });
+  await wait(800);
+  await evaluate(cdp, `(async () => {
+    const db = await new Promise((res) => { const r = indexedDB.open('nagaranetra', 1); r.onsuccess = () => res(r.result); });
+    await new Promise((res) => {
+      const t = db.transaction('profile', 'readwrite').objectStore('profile').put({
+        id: 'household', city: 'kochi', zoneId: 'kaloor', lat: 9.997, lng: 76.299,
+        buildingType: 'independent', floorLevel: 0, householdSize: 4,
+        hasElderly: true, hasLimitedMobility: true, hasVehicle: false,
+        language: 'ml', updatedAt: Date.now(), skipped: [],
+      });
+      t.onsuccess = () => res();
+    });
+  })()`);
+}
+await seedHousehold();
+
 console.log('\n3. Accessible names on every interactive element');
-await cdp.send('Page.navigate', { url: `${ORIGIN}/styleguide` });
+for (const path of ['/styleguide', '/setup', '/']) {
+await cdp.send('Page.navigate', { url: `${ORIGIN}${path}` });
 await wait(1400);
 const unnamed = JSON.parse(
   await evaluate(
@@ -117,7 +137,8 @@ const unnamed = JSON.parse(
      })()`,
   ),
 );
-check(unnamed.bad.length === 0, `all ${unnamed.total} interactive elements have an accessible name`, unnamed.bad.join(', '));
+check(unnamed.bad.length === 0, `${path}: all ${unnamed.total} interactive elements have an accessible name`, unnamed.bad.join(', '));
+}
 
 console.log('\n4. Keyboard navigation — every stop in the tab order');
 
@@ -144,36 +165,54 @@ const DESCRIBE_FOCUS = `(() => {
   });
 })()`;
 
-await evaluate(cdp, 'window.scrollTo(0, 0); document.body.focus();');
-const seen = [];
-let invisible = [];
-for (let i = 0; i < 60; i++) {
-  await pressTab();
-  const info = JSON.parse(await evaluate(cdp, DESCRIBE_FOCUS));
-  if (info.end) break;
-  if (seen.some((s) => s.tag === info.tag && s.name === info.name)) break; // wrapped around
-  seen.push(info);
-  if (!info.focusVisible || info.ringWidth < 2) invisible.push(`${info.tag} "${info.name}" ring=${info.ringWidth}px`);
+/** Walk the whole tab order of a page and report every stop. */
+async function tabThrough(path) {
+  await cdp.send('Page.navigate', { url: `${ORIGIN}${path}` });
+  await wait(1500);
+  await evaluate(cdp, 'window.scrollTo(0, 0); document.body.focus();');
+  const seen = [];
+  for (let i = 0; i < 60; i++) {
+    await pressTab();
+    const info = JSON.parse(await evaluate(cdp, DESCRIBE_FOCUS));
+    if (info.end) break;
+    if (seen.some((s) => s.tag === info.tag && s.name === info.name)) break; // wrapped around
+    seen.push(info);
+  }
+  const invisible = seen.filter((s) => !s.focusVisible || s.ringWidth < 2);
+  check(seen.length > 0, `${path}: tab order reaches ${seen.length} elements`);
+  check(
+    invisible.length === 0,
+    `${path}: every focused element shows a ring of at least 2px`,
+    invisible.map((s) => `${s.tag} "${s.name}" ring=${s.ringWidth}px`).join(' | '),
+  );
+  return seen;
 }
-check(seen.length > 0, `tab order reaches ${seen.length} elements`);
-check(invisible.length === 0, 'every focused element shows a ring of at least 2px', invisible.join(' | '));
 
-// The scrubber and the emergency button specifically, since they were called out.
-for (const [name, needle] of [['threshold line scrubber', 'input#scrub'], ['emergency button', 'Get help']]) {
-  const hit = seen.find((s) => s.tag === needle || s.name === needle);
-  check(Boolean(hit), `${name} is reachable by keyboard`, hit ? `ring ${hit.ringWidth}px` : 'never focused');
-}
+const styleguideStops = await tabThrough('/styleguide');
+await tabThrough('/setup');
+const dashboardStops = await tabThrough('/');
+
+// The two controls called out specifically: the signature element's scrubber, and the
+// emergency request that has to be reachable without a mouse.
+check(
+  styleguideStops.some((s) => s.tag === 'input#scrub'),
+  'the threshold line scrubber is reachable by keyboard',
+);
+check(
+  dashboardStops.some((s) => (s.name || '').includes('Get help')),
+  'the emergency request is reachable by keyboard from the dashboard',
+);
 
 // A picture, because "outline-width: 2px" and "you can see it" are different claims.
-await evaluate(cdp, `document.getElementById('clause-5').scrollIntoView({ block: 'center' })`);
-await wait(300);
-let guard = 0;
-while (guard++ < 80) {
+await cdp.send('Page.navigate', { url: `${ORIGIN}/` });
+await wait(1500);
+await evaluate(cdp, 'window.scrollTo(0, 0); document.body.focus();');
+for (let i = 0; i < 30; i++) {
   await pressTab();
   const info = JSON.parse(await evaluate(cdp, DESCRIBE_FOCUS));
-  if (info.end) break;
-  if ((info.name || '').includes('Get help')) break;
+  if (info.end || (info.name || '').includes('Get help')) break;
 }
+await evaluate(cdp, `document.activeElement.scrollIntoView({ block: 'center' })`);
 await wait(300);
 const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
 writeFileSync('.shots/a11y-focus.png', Buffer.from(shot.data, 'base64'));
