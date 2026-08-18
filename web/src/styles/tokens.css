@@ -1,0 +1,132 @@
+/* NAGARANETRA — design tokens. CLAUDE.md §5 is the source of truth for every value here.
+   Nothing else in this project may contain a hex literal: all colour comes from var(--*). */
+
+:root {
+  /* ---- Citizen surface — light -------------------------------------------
+     Read outdoors, in daylight, one-handed, under stress. */
+  --paper:        #F6F7F5;   /* cool off-white. NOT cream, NOT #F4F1EA */
+  --paper-raised: #FFFFFF;
+  --ink:          #14181B;
+  --ink-muted:    #59636B;
+  --rule:         #DDE2DE;
+
+  /* ---- City surface — dark -----------------------------------------------
+     Read on a monitor in a room. Dense, instrumented. */
+  --base:         #0C1013;
+  --surface:      #151B20;
+  --rule-dark:    #232C33;
+  --ink-dark:     #EAF0F2;
+
+  /* ---- IMD warning ladder — the only chromatic colours -------------------
+     Everything the system PREDICTS is coloured from this ladder and nothing else. */
+  --level-none:    #128A4E;
+  --level-watch:   #F2C200;
+  --level-alert:   #EE7415;
+  --level-warning: #CE1B2C;
+
+  /* ---- Human action — deliberately outside the hazard ladder --------------
+     Everything a PERSON does is this blue. --act on light, --act-dark on dark. */
+  --act:           #1B4FD8;
+  --act-dark:      #5B8CFF;
+
+  /* ---- Surface bindings ---------------------------------------------------
+     Components read these, never the raw palette above. Swapping the surface
+     (see [data-surface="city"]) then repaints a whole subtree with no component
+     knowing which surface it is on. */
+  --bg:            var(--paper);
+  --bg-raised:     var(--paper-raised);
+  --fg:            var(--ink);
+  --fg-muted:      var(--ink-muted);
+  --hairline:      var(--rule);
+  --action:        var(--act);
+
+  /* ---- Type (CLAUDE.md §5) ------------------------------------------------
+     Malayalam sits ahead of the latin body face in the body stack: its
+     unicode-range confines it to the Malayalam block, so latin still renders
+     in Inter and mixed-script lines shape correctly. */
+  --font-display: 'Archivo', system-ui, sans-serif;
+  --font-body:    'Inter', 'Noto Sans Malayalam', system-ui, sans-serif;
+  --font-mal:     'Noto Sans Malayalam', 'Inter', system-ui, sans-serif;
+  --font-num:     'IBM Plex Mono', ui-monospace, monospace;
+
+  /* Display widths — the condensed end of Archivo's wdth axis is the signage voice. */
+  --width-condensed: 75%;
+  --width-normal:    100%;
+
+  /* ---- Motion (CLAUDE.md §5) ---------------------------------------------
+     Plain transitions for fades; springs (via `motion`) for anything a finger drives.
+     One orchestrated moment only — the threshold crossing. */
+  --dur-fast:   120ms;
+  --dur-base:   200ms;
+  --dur-slow:   320ms;
+  --ease-out:   cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
+
+  /* ---- Geometry ----------------------------------------------------------- */
+  --radius-sm: 2px;
+  --radius-md: 4px;   /* notice-board corners, not app-card corners */
+  --hairline-w: 1px;
+
+  /* Emergency controls must be hittable one-handed, wet, in a hurry. */
+  --tap-min: 44px;
+  --tap-sos: 64px;
+}
+
+/* The city dashboard. Same components, inverted bindings — no component branches on it. */
+[data-surface='city'] {
+  --bg:        var(--base);
+  --bg-raised: var(--surface);
+  --fg:        var(--ink-dark);
+  --fg-muted:  color-mix(in srgb, var(--ink-dark) 62%, var(--base));
+  --hairline:  var(--rule-dark);
+  --action:    var(--act-dark);
+}
+
+html {
+  background: var(--bg);
+  /* Prevent iOS Safari inflating text in the emergency path. */
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-optical-sizing: auto;
+  font-synthesis-weight: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Every number that can change is tabular, so it does not jitter as it ticks. */
+.num {
+  font-family: var(--font-num);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Status words only — never body copy. */
+.display {
+  font-family: var(--font-display);
+  font-stretch: var(--width-condensed);
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+}
+
+/* Accessibility is a constraint (CLAUDE.md §2): focus must always be visible,
+   and must survive on both surfaces. */
+:focus-visible {
+  outline: 2px solid var(--action);
+  outline-offset: 2px;
+}
+
+/* prefers-reduced-motion: movement drops, opacity survives. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

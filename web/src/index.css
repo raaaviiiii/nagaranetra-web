@@ -1,0 +1,27 @@
+/* Load order matters: faces, then tokens, then Tailwind, then the theme bridge. */
+@import './styles/fonts.css';
+@import './styles/tokens.css';
+@import 'tailwindcss';
+
+/* Bridge tokens into Tailwind v4 utilities. `inline` keeps the var() reference in the
+   generated CSS instead of resolving it at build time — so `bg-raised` and friends
+   still flip when [data-surface="city"] rebinds the underlying token at runtime.
+   This is the only place Tailwind learns about colour; there is no palette beyond it. */
+@theme inline {
+  --color-bg:        var(--bg);
+  --color-raised:    var(--bg-raised);
+  --color-fg:        var(--fg);
+  --color-muted:     var(--fg-muted);
+  --color-hairline:  var(--hairline);
+  --color-action:    var(--action);
+
+  --color-level-none:    var(--level-none);
+  --color-level-watch:   var(--level-watch);
+  --color-level-alert:   var(--level-alert);
+  --color-level-warning: var(--level-warning);
+
+  --font-display: var(--font-display);
+  --font-body:    var(--font-body);
+  --font-mal:     var(--font-mal);
+  --font-num:     var(--font-num);
+}
