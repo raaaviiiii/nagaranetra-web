@@ -17,30 +17,54 @@ npm install
 npm run dev        # http://localhost:5173
 ```
 
-Other scripts: `npm run build`, `npm run preview`, `npm run lint`.
+Other scripts: `npm run build`, `npm run preview`, `npm run lint`, `npm run typecheck`.
 
-**It runs with the backend switched off.** That is the design, not a fallback: with no
-`VITE_API_BASE` set the app serves committed scenario data from `web/public/data/` and the
-status chip in the header reads `Simulated data`. Point it at a live API with:
+## It runs with the backend switched off
+
+That is the architecture, not a fallback. Every network call in the app goes through one
+module, `web/src/lib/api.ts`, and that module can always answer from a deterministic
+in-browser implementation of the same contract.
+
+One flag, three modes:
+
+| `VITE_API_MODE` | Behaviour |
+|---|---|
+| `mock` | Never touches the network. The default with no API configured, and how we demo. |
+| `auto` | Calls the API; on **any** failure — offline, non-2xx, bad body, or a 2 s timeout — falls back to the mock and flips the status chip. Two failures in a row open a circuit breaker, so a hanging backend costs seconds, not 2 s per call. |
+| `live` | Always calls the API and lets errors throw. Integration debugging only — never demo in this mode. |
 
 ```bash
-echo 'VITE_API_BASE=http://localhost:8000' > web/.env.local
+echo 'VITE_API_BASE=http://localhost:8000' > web/.env.local   # mode becomes 'auto'
 ```
 
-If a live call fails or takes longer than 2 s, the app falls back to the committed data
-**and flips the chip back to `Simulated data`**. It never silently serves stale numbers.
+The header chip reads **Live data**, **Simulated data** or **Offline**, always, with no
+dismiss control. If the numbers came from the mock, the product says so on its face.
+
+### Proving it
+
+```bash
+cd web
+npm run test          # the mock: determinism + the contract's four validation properties
+npm run verify:seam   # drives the real api.ts in a real browser against a dead backend
+```
+
+`verify:seam` starts a server that accepts connections and never answers, runs all eight
+endpoints through the app's own code, then cuts the network at the browser, then removes
+the backend entirely — 61 checks covering shape, timing, status and visible chip text.
 
 ## Layout
 
 ```
-web/src/lib/          api.ts (the only network call), mock.ts, storage.ts, sync.ts
+web/src/lib/          contract.ts (types), api.ts (the only network call),
+                      mock.ts, storage.ts (IndexedDB), sync.ts (offline queue)
 web/src/routes/       one file per screen
 web/src/scene/        Three.js — real OSM geometry
 web/src/hazards/      per-hazard renderers + copy
 web/src/styles/       tokens.css — the single source of colour
 web/public/fonts/     self-hosted woff2. No CDN, ever — offline is a product requirement
 web/public/data/      committed hazard scenarios
-docs/                 API_CONTRACT.md (frozen), DESIGN.md, DEMO.md
+web/docs/             API_CONTRACT.md (frozen), DESIGN.md, DEMO.md
+web/scripts/          make-icons, shoot (screenshots), verify-seam (the backend-off proof)
 ```
 
 Stack: Vite, React, TypeScript, Tailwind, `vite-plugin-pwa`. Motion via `motion`,
@@ -50,8 +74,10 @@ primitives via Base UI, toasts via `sonner`, numbers via `number-flow`, charts v
 ## The backend
 
 Separate repository, owned by a teammate. The contract between the two is **frozen** and
-documented in [`docs/API_CONTRACT.md`](docs/API_CONTRACT.md) — it changes only by
-agreement, with both repos updated in the same sitting.
+documented in [`web/docs/API_CONTRACT.md`](web/docs/API_CONTRACT.md) — it changes only by
+agreement, with both repos updated in the same sitting. `web/src/lib/contract.ts` is a
+TypeScript mirror of §6 of that document, and `web/src/lib/mock.ts` implements all eight
+endpoints, so the frontend was built against the contract before the backend existed.
 
 API repository: **TODO — add the link once the backend repo exists.**
 
