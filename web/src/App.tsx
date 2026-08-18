@@ -2,17 +2,27 @@
  * The shell: a header carrying the wordmark and the Live/Simulated chip, one nav, and the
  * routed screen. Routes mirror CLAUDE.md §4 one-for-one.
  */
+import { Suspense, lazy } from 'react';
 import { NavLink, Route, Routes } from 'react-router-dom';
 import { Toaster } from 'sonner';
 import { StatusChip } from './components/StatusChip';
 import Dashboard from './routes/index';
-import Setup from './routes/setup';
 import Help from './routes/help';
-import Shelters from './routes/shelters';
-import Nearby from './routes/nearby';
-import Damage from './routes/damage';
-import City from './routes/city';
-import Styleguide from './routes/styleguide';
+
+/*
+ * The dashboard and the help screen load eagerly: one is where a resident lands, the other
+ * is the emergency path, and neither may wait on a second request.
+ *
+ * Everything else is split. Setup alone pulls in Leaflet, which is dead weight on every
+ * screen that is not a map — a single bundle came to 935 kB, and parsing that on a
+ * mid-range phone costs real time before anything is on screen.
+ */
+const Setup = lazy(() => import('./routes/setup'));
+const Shelters = lazy(() => import('./routes/shelters'));
+const Nearby = lazy(() => import('./routes/nearby'));
+const Damage = lazy(() => import('./routes/damage'));
+const City = lazy(() => import('./routes/city'));
+const Styleguide = lazy(() => import('./routes/styleguide'));
 
 const NAV = [
   { to: '/', label: 'Home', end: true },
@@ -70,16 +80,24 @@ export default function App() {
       </header>
 
       <main id="main" className="flex flex-1 flex-col">
-        <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/setup" element={<Setup />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/shelters" element={<Shelters />} />
-          <Route path="/nearby" element={<Nearby />} />
-          <Route path="/damage" element={<Damage />} />
-          <Route path="/city" element={<City />} />
-          <Route path="/styleguide" element={<Styleguide />} />
-        </Routes>
+        <Suspense
+          fallback={
+            <p className="mx-auto w-full max-w-[46rem] px-5 py-8" style={{ color: 'var(--fg-muted)' }}>
+              Loading…
+            </p>
+          }
+        >
+          <Routes>
+            <Route path="/" element={<Dashboard />} />
+            <Route path="/setup" element={<Setup />} />
+            <Route path="/help" element={<Help />} />
+            <Route path="/shelters" element={<Shelters />} />
+            <Route path="/nearby" element={<Nearby />} />
+            <Route path="/damage" element={<Damage />} />
+            <Route path="/city" element={<City />} />
+            <Route path="/styleguide" element={<Styleguide />} />
+          </Routes>
+        </Suspense>
       </main>
 
       <Toaster position="bottom-center" />
