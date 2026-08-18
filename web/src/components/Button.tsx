@@ -7,6 +7,8 @@
  *                Red is not "a person acted", it is "this is critical" — which is why the
  *                emergency request carries it and the register button does not.
  *   quiet      — everything secondary. Achromatic, bordered, no fill.
+ *   text       — third tier: back, skip, dismiss. No border at all, because a bordered
+ *                control at the edge of a screen competes with the one thing on it.
  *
  * Press feedback fires on pointer-down via :active, not on release, so the control feels
  * like it heard you. The action itself still fires on click, because firing on
@@ -15,7 +17,7 @@
  */
 import type { AnchorHTMLAttributes, ButtonHTMLAttributes, ReactNode } from 'react';
 
-export type ButtonVariant = 'primary' | 'emergency' | 'quiet';
+export type ButtonVariant = 'primary' | 'emergency' | 'quiet' | 'text';
 
 type CommonProps = {
   variant?: ButtonVariant;
@@ -52,13 +54,21 @@ const VARIANT_STYLE: Record<ButtonVariant, React.CSSProperties> = {
     // --edge, not --hairline: a control's boundary has to clear 3:1 to be a boundary.
     border: '1px solid var(--edge)',
   },
+  text: {
+    background: 'transparent',
+    color: 'var(--fg-muted)',
+    border: '1px solid transparent',
+    textDecoration: 'underline',
+    textUnderlineOffset: '3px',
+    padding: '0 0.25em',
+  },
 };
 
 export function Button({ variant = 'primary', size = 'md', children, ...rest }: ButtonProps) {
   const style: React.CSSProperties = {
     ...VARIANT_STYLE[variant],
     minHeight: size === 'lg' ? 'var(--tap-sos)' : 'var(--tap-min)',
-    fontSize: size === 'lg' ? 'var(--size-title)' : 'var(--size-body)',
+    fontSize: size === 'lg' ? 'var(--size-lead)' : 'var(--size-body)',
     ...rest.style,
   };
   const className = `ng-button display ${rest.className ?? ''}`;

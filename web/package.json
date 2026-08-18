@@ -13,7 +13,9 @@
     "test": "node --test src/**/*.test.ts",
     "verify:seam": "node scripts/verify-seam.mjs",
     "typecheck": "tsc -b",
-    "verify:a11y": "node scripts/verify-a11y.mjs"
+    "verify:a11y": "node scripts/verify-a11y.mjs",
+    "verify:console": "node scripts/verify-console.mjs",
+    "basemap": "node scripts/fetch-basemap.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.7.0",

@@ -21,11 +21,15 @@ import type { Band, BuildingType, City, Profile, ThresholdResponse, Zone } from 
 import { getCity, getForecast, postThreshold } from '../lib/api';
 import { DEFAULT_CITY } from '../lib/mock';
 import { saveProfile } from '../lib/storage';
-import { LEVEL_WORD, formatValue } from '../lib/levels';
+import { formatValue } from '../lib/levels';
 import { Button } from '../components/Button';
 import { LevelChip } from '../components/LevelChip';
 import { ThresholdLine } from '../components/ThresholdLine';
-import { Choice, StepShell, Toggle } from '../components/setup/StepShell';
+import { Choice } from '../components/Choice';
+import { Toggle } from '../components/Toggle';
+import { SectionHeading } from '../components/SectionHeading';
+import { Surface } from '../components/Surface';
+import { StepShell } from '../components/setup/StepShell';
 import { MapPicker, zoneAt } from '../components/setup/MapPicker';
 
 /** The illustrative scenario the floor question previews. A hard but plausible hour. */
@@ -418,57 +422,69 @@ function FloorStep({
       </div>
 
       {/* The demonstration. Not a diagram of the product — the product, answering. */}
-      <div
-        className="mt-6 p-4"
-        style={{ border: '1px solid var(--hairline)', borderRadius: 'var(--radius-md)' }}
-        aria-live="polite"
-      >
-        <div
-          className="display text-[length:var(--size-micro)] tracking-[0.14em]"
-          style={{ color: 'var(--fg-muted)' }}
-        >
-          On a night of heavy rain, at this floor
-        </div>
+      <div style={{ marginTop: 'var(--space-xl)' }}>
+        <SectionHeading>On a night of heavy rain, at this floor</SectionHeading>
+        <Surface kind="citizen">
+          <div
+            style={{
+              marginTop: 'var(--space-sm)',
+              padding: 'var(--space-lg)',
+              border: '1px solid var(--hairline)',
+              borderRadius: 'var(--radius-md)',
+            }}
+            aria-live="polite"
+          >
+            {shown && bands ? (
+              <>
+                <div className="flex items-center" style={{ gap: 'var(--space-md)' }}>
+                  <LevelChip level={shown.level} />
+                  <span style={{ fontSize: 'var(--size-caption)', color: 'var(--fg-muted)' }}>
+                    {shown.exposure > 0
+                      ? `Water reaches ${formatValue(shown.exposure, shown.unit)} where you live`
+                      : 'The water does not reach you'}
+                  </span>
+                </div>
 
-        {shown && bands ? (
-          <>
-            <div className="mt-3 flex items-center gap-3">
-              <LevelChip level={shown.level} />
-              <span className="text-[length:var(--size-small)]" style={{ color: 'var(--fg-muted)' }}>
-                {shown.exposure > 0
-                  ? `Water reaches ${formatValue(shown.exposure, shown.unit)} where you live`
-                  : 'The water does not reach you'}
-              </span>
-            </div>
-            <div className="mt-4">
-              <ThresholdLine
-                current={shown.exposure}
-                threshold={shown.threshold}
-                unit={shown.unit}
-                bands={bands}
-                size="md"
-                label={`Flood at floor ${hovered}: ${formatValue(shown.exposure, shown.unit)} against a ${formatValue(shown.threshold, shown.unit)} limit`}
-              />
-            </div>
-            <p className="mt-4 text-[length:var(--size-small)]" style={{ fontWeight: 500 }}>
-              {shown.action}
-            </p>
-          </>
-        ) : (
-          <p className="mt-3 text-[length:var(--size-small)]" style={{ color: 'var(--fg-muted)' }}>
-            Working out what this floor would be told…
-          </p>
-        )}
+                <p
+                  style={{
+                    marginTop: 'var(--space-md)',
+                    fontSize: 'var(--size-lead)',
+                    fontWeight: 500,
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {shown.action}
+                </p>
 
-        <p className="mt-3 text-[length:var(--size-micro)]" style={{ color: 'var(--fg-muted)' }}>
-          Modelled for {LEVEL_WORD.warning.toLowerCase()}-level rainfall. Simulated data.
-        </p>
+                <div style={{ marginTop: 'var(--space-lg)' }}>
+                  <ThresholdLine
+                    current={shown.exposure}
+                    threshold={shown.threshold}
+                    unit={shown.unit}
+                    bands={bands}
+                    size="md"
+                    label={`Flood at floor ${hovered}: ${formatValue(shown.exposure, shown.unit)} against a ${formatValue(shown.threshold, shown.unit)} limit`}
+                  />
+                </div>
+              </>
+            ) : (
+              <p style={{ fontSize: 'var(--size-caption)', color: 'var(--fg-muted)' }}>
+                Working out what this floor would be told…
+              </p>
+            )}
+          </div>
+        </Surface>
       </div>
     </StepShell>
   );
 }
 
-/** A number you can set with a thumb or with the keyboard. */
+/**
+ * A number you can set with a thumb or with the keyboard.
+ *
+ * The value is the dominant thing on this screen after the question, so it is set at the
+ * hero number size and the controls beside it stay quiet.
+ */
 function Counter({
   value,
   min,
@@ -485,50 +501,36 @@ function Counter({
   const step = (delta: number) => onChange(Math.min(max, Math.max(min, value + delta)));
 
   return (
-    <div className="flex items-center gap-4">
-      <button
-        type="button"
-        className="ng-button display"
-        style={{
-          background: 'transparent',
-          color: 'var(--fg)',
-          border: '1px solid var(--edge)',
-          minHeight: 'var(--tap-sos)',
-          minWidth: 'var(--tap-sos)',
-          fontSize: 'var(--size-title)',
-        }}
+    <div className="flex items-center" style={{ gap: 'var(--space-lg)' }}>
+      <Button
+        variant="quiet"
+        size="lg"
         onClick={() => step(-1)}
         disabled={value <= min}
         aria-label={`One fewer person. Currently ${value}.`}
+        style={{ minWidth: 'var(--tap-sos)' }}
       >
         −
-      </button>
+      </Button>
 
       <output
-        className="num flex-1 text-center text-[length:var(--size-num-xl)]"
-        style={{ fontWeight: 500 }}
+        className="num flex-1 text-center"
+        style={{ fontSize: 'var(--size-num-hero)', fontWeight: 500, lineHeight: 1 }}
         aria-label={`${label}: ${value}`}
       >
         {value}
       </output>
 
-      <button
-        type="button"
-        className="ng-button display"
-        style={{
-          background: 'transparent',
-          color: 'var(--fg)',
-          border: '1px solid var(--edge)',
-          minHeight: 'var(--tap-sos)',
-          minWidth: 'var(--tap-sos)',
-          fontSize: 'var(--size-title)',
-        }}
+      <Button
+        variant="quiet"
+        size="lg"
         onClick={() => step(1)}
         disabled={value >= max}
         aria-label={`One more person. Currently ${value}.`}
+        style={{ minWidth: 'var(--tap-sos)' }}
       >
         +
-      </button>
+      </Button>
     </div>
   );
 }

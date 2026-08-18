@@ -108,9 +108,23 @@
 
 /* Leaflet, dressed in the project's tokens. Leaflet ships its own greys, which would be
    the only non-token colours in the product. */
+.ng-map {
+  border: 1px solid var(--hairline);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
 .ng-map .leaflet-container {
   background: var(--bg-raised);
   font-family: var(--font-body);
+}
+
+.ng-map .leaflet-control-attribution {
+  background: color-mix(in srgb, var(--bg-raised) 88%, transparent);
+  color: var(--fg-muted);
+  font-family: var(--font-body);
+  font-size: var(--size-micro);
+  padding: 2px 6px;
 }
 
 .ng-map .leaflet-control-zoom a {
@@ -123,12 +137,15 @@
    no image asset is fetched. */
 .ng-pin span {
   display: block;
-  width: 16px;
-  height: 16px;
+  width: 18px;
+  height: 18px;
   border: 3px solid var(--fg);
   background: var(--bg-raised);
   border-radius: 1px;
   box-sizing: border-box;
+  /* A paper halo, so the pin never disappears into the road mesh under it. The map is
+     context; the pin is the only thing on it that is the subject. */
+  box-shadow: 0 0 0 2px var(--bg-raised);
 }
 
 .ng-pin:focus-visible span {
@@ -153,43 +170,20 @@
   display: none;
 }
 
-/* One question per screen. The step swaps in place, so it fades rather than sliding —
-   a slide would imply a spatial relationship the stepper does not have on a phone. */
-.ng-step {
-  animation: ng-step-in var(--dur-base) var(--ease-out) both;
-}
-
-@keyframes ng-step-in {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .ng-step {
-    animation: ng-step-fade var(--dur-fast) var(--ease-out) both;
-  }
-  @keyframes ng-step-fade {
-    from {
-      opacity: 0;
-    }
-  }
-}
-
-/* A choice in the setup flow. Big target, whole row pressable, ink-on-paper. */
+/* A choice row. Tall, quiet, and the whole row is the target — on a screen whose only
+   job is one question, the options are allowed to take the space. */
 .ng-choice {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.75rem;
+  gap: var(--space-md);
   width: 100%;
-  min-height: 56px;
-  padding: 0.7rem 0.9rem;
+  min-height: 4.25rem;
+  padding: var(--space-md);
   text-align: left;
   background: var(--bg-raised);
   color: var(--fg);
-  border: 1px solid var(--edge);
+  border: 1px solid var(--hairline);
   border-radius: var(--radius-md);
   cursor: pointer;
   transition:
@@ -198,31 +192,137 @@
 }
 
 .ng-choice:active {
-  transform: scale(0.985);
+  transform: scale(0.99);
 }
 
+/* Selected: a 2px ink edge. The padding compensates so the row does not shift by a pixel
+   when it is chosen — a jump on select reads as a bug. */
 .ng-choice[aria-checked='true'],
 .ng-choice[aria-pressed='true'] {
   border-color: var(--fg);
   border-width: 2px;
-  padding: calc(0.7rem - 1px) calc(0.9rem - 1px);
+  padding: calc(var(--space-md) - 1px);
 }
 
 @media (hover: hover) and (pointer: fine) {
   .ng-choice:hover {
-    border-color: var(--fg-muted);
+    border-color: var(--edge);
   }
+}
+
+.ng-choice-body {
+  display: block;
+  min-width: 0;
+}
+
+.ng-choice-label {
+  display: block;
+  font-size: var(--size-lead);
+  line-height: 1.25;
+}
+
+.ng-choice[aria-checked='true'] .ng-choice-label,
+.ng-choice[aria-pressed='true'] .ng-choice-label {
+  font-weight: 600;
+}
+
+.ng-choice-hint {
+  display: block;
+  margin-top: var(--space-xs);
+  font-size: var(--size-caption);
+  color: var(--fg-muted);
+  line-height: 1.35;
+}
+
+.ng-choice-mark {
+  flex: 0 0 auto;
+  font-size: var(--size-lead);
+  font-weight: 700;
+  color: var(--fg);
+  width: 1.25rem;
+  text-align: right;
+}
+
+.ng-checkbox {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 2px solid var(--edge);
+  border-radius: var(--radius-sm);
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1;
+  color: transparent;
+}
+
+.ng-choice[aria-pressed='true'] .ng-checkbox {
+  border-color: var(--fg);
+  background: var(--fg);
+  color: var(--bg-raised);
+}
+
+/* The stamped label that names a value or a secondary block. */
+.ng-label,
+.ng-section-heading {
+  display: block;
+  font-family: var(--font-display);
+  font-size: var(--size-micro);
+  font-stretch: var(--width-condensed);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--fg-muted);
+  margin: 0;
+  font-weight: 500;
 }
 
 /* A plain select, in the project's furniture rather than the platform's. */
 .ng-select {
   width: 100%;
-  min-height: var(--tap-min);
-  padding: 0 0.75rem;
+  min-height: 3.5rem;
+  margin-top: var(--space-xs);
+  padding: 0 var(--space-md);
   background: var(--bg-raised);
   color: var(--fg);
   border: 1px solid var(--edge);
   border-radius: var(--radius-md);
   font-family: var(--font-body);
-  font-size: var(--size-body);
+  font-size: var(--size-lead);
+}
+
+/* A whole-row link. Used where a list of destinations would otherwise become a stack of
+   competing buttons. */
+.ng-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  min-height: var(--tap-min);
+  padding: var(--space-md) 0;
+  color: inherit;
+  text-decoration: none;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+.ng-row:active {
+  opacity: 0.6;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .ng-row:hover {
+    opacity: 0.7;
+  }
+}
+
+/* The nav is chrome, not content. It recedes so the one idea on each screen can dominate. */
+.ng-nav a {
+  font-size: var(--size-caption);
+  color: var(--fg-muted);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.ng-nav a[aria-current='page'] {
+  color: var(--fg);
 }

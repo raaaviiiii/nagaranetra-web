@@ -2,13 +2,18 @@
  * Nearest hospital, fire station, police station and shelter.
  *
  * Distances are from `/nearby`, measured from this household's pin — the point of the
- * whole product is that these are yours, not your district's.
+ * product is that these are yours, not your district's.
  *
- * The phone numbers are India's public emergency numbers, and the control says which one
- * it dials. Note the wording: this places a call. We do not dispatch anybody, and nothing
- * on this list may imply we did (CLAUDE.md §2).
+ * WEIGHT. An earlier version gave every row an outlined call button, which put five
+ * bordered controls of near-equal weight directly under the one instruction the screen
+ * exists to deliver. This is supporting information: the whole row is the link, the phone
+ * number is quiet text, and the only strong mark is the action blue on the number itself.
+ *
+ * The numbers are India's public emergency numbers, and the row says which one it dials.
+ * Nothing here implies we dispatch anyone — we do not (CLAUDE.md §2).
  */
 import type { NearbyService, ServiceType } from '../lib/contract';
+import { SectionHeading } from './SectionHeading';
 
 const TYPE_LABEL: Record<ServiceType, string> = {
   hospital: 'Hospital',
@@ -25,55 +30,40 @@ function formatDistance(metres: number): string {
 export function NearbyList({ services }: { services: NearbyService[] }) {
   return (
     <section>
-      <h2
-        className="display mb-3 text-[length:var(--size-micro)] tracking-[0.14em]"
-        style={{ color: 'var(--fg-muted)' }}
-      >
-        Nearest help
-      </h2>
+      <SectionHeading>Nearest help</SectionHeading>
 
-      <ul style={{ borderTop: '1px solid var(--hairline)' }}>
+      <ul style={{ marginTop: 'var(--space-md)' }}>
         {services.map((service) => (
-          <li
-            key={`${service.type}-${service.name}`}
-            className="flex items-center justify-between gap-3 py-3"
-            style={{ borderBottom: '1px solid var(--hairline)' }}
-          >
-            <div className="min-w-0">
-              <div
-                className="display text-[length:var(--size-micro)] tracking-[0.12em]"
-                style={{ color: 'var(--fg-muted)' }}
-              >
-                {TYPE_LABEL[service.type]}
-              </div>
-              <div
-                className="text-[length:var(--size-small)] leading-snug"
-                style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}
-              >
-                {service.name}
-              </div>
-            </div>
-
-            <div className="flex flex-shrink-0 items-center gap-3">
-              <span className="num text-[length:var(--size-caption)]" style={{ color: 'var(--fg-muted)' }}>
-                {formatDistance(service.distanceM)}
+          <li key={`${service.type}-${service.name}`} style={{ borderTop: '1px solid var(--hairline)' }}>
+            <a
+              href={`tel:${service.phone}`}
+              className="ng-row"
+              aria-label={`Call ${service.name}, ${TYPE_LABEL[service.type]}, ${formatDistance(
+                service.distanceM,
+              )} away, on ${service.phone}`}
+            >
+              <span className="min-w-0">
+                <span className="ng-label">
+                  {TYPE_LABEL[service.type]} · <span className="num">{formatDistance(service.distanceM)}</span>
+                </span>
+                <span
+                  style={{
+                    display: 'block',
+                    marginTop: 2,
+                    fontSize: 'var(--size-body)',
+                    lineHeight: 1.3,
+                  }}
+                >
+                  {service.name}
+                </span>
               </span>
-              <a
-                href={`tel:${service.phone}`}
-                className="ng-button display"
-                style={{
-                  background: 'transparent',
-                  color: 'var(--action)',
-                  border: '1px solid var(--edge)',
-                  minHeight: 'var(--tap-min)',
-                  fontSize: 'var(--size-caption)',
-                  textDecoration: 'none',
-                }}
-                aria-label={`Call ${service.name} on ${service.phone}`}
+              <span
+                className="num"
+                style={{ flex: '0 0 auto', color: 'var(--action)', fontSize: 'var(--size-body)' }}
               >
-                Call {service.phone}
-              </a>
-            </div>
+                {service.phone}
+              </span>
+            </a>
           </li>
         ))}
       </ul>

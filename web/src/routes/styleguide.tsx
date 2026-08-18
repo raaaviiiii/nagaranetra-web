@@ -12,12 +12,17 @@
  * visibly, before it reaches a screen. §3 drives the signature element from real mock data
  * for two different hazards in two different units.
  */
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { Band, HazardUnit, Level, Profile } from '../lib/contract';
 import * as mock from '../lib/mock';
 import { readToken, verdict } from '../lib/contrast';
 import { LEVEL_MEANING, LEVEL_ORDER, LEVEL_WORD, formatValue } from '../lib/levels';
 import { Button } from '../components/Button';
+import { Choice } from '../components/Choice';
+import { Toggle } from '../components/Toggle';
+import { Select } from '../components/Select';
+import { Stat } from '../components/Stat';
+import { SectionHeading } from '../components/SectionHeading';
 import { EmptyState } from '../components/EmptyState';
 import { ErrorState } from '../components/ErrorState';
 import { LevelChip } from '../components/LevelChip';
@@ -46,7 +51,7 @@ function Clause({
   children: React.ReactNode;
 }) {
   return (
-    <section className="mt-14 first:mt-0" id={`clause-${n}`}>
+    <section id={`clause-${n}`} style={{ marginTop: 'var(--space-2xl)' }}>
       <div className="flex items-baseline gap-3">
         <span
           className="num text-[length:var(--size-caption)]"
@@ -56,7 +61,7 @@ function Clause({
           §{n}
         </span>
         <h2
-          className="display text-[length:var(--size-title)] tracking-[0.06em]"
+          className="display text-[length:var(--size-lead)] tracking-[0.06em]"
           style={{ fontWeight: 800 }}
         >
           {title}
@@ -64,12 +69,16 @@ function Clause({
       </div>
       <hr className="sheet-rule mt-2" />
       <p
-        className="mt-3 max-w-[62ch] text-[length:var(--size-small)] leading-relaxed"
-        style={{ color: 'var(--fg-muted)' }}
+        className="max-w-[58ch] leading-relaxed"
+        style={{
+          marginTop: 'var(--space-md)',
+          fontSize: 'var(--size-body)',
+          color: 'var(--fg-muted)',
+        }}
       >
         {rule}
       </p>
-      <div className="mt-6">{children}</div>
+      <div style={{ marginTop: 'var(--space-xl)' }}>{children}</div>
     </section>
   );
 }
@@ -86,15 +95,15 @@ function Specimen({
 }) {
   return (
     <div className={className}>
-      <div
-        className="display mb-2 text-[length:var(--size-micro)] tracking-[0.14em]"
-        style={{ color: 'var(--fg-muted)' }}
-      >
+      <div className="ng-label" style={{ marginBottom: 'var(--space-sm)' }}>
         {label}
       </div>
       <div
-        className="p-4"
-        style={{ border: '1px solid var(--hairline)', borderRadius: 'var(--radius-sm)' }}
+        style={{
+          padding: 'var(--space-lg)',
+          border: '1px solid var(--hairline)',
+          borderRadius: 'var(--radius-md)',
+        }}
       >
         {children}
       </div>
@@ -116,48 +125,32 @@ const TYPE_SCALE: Array<{
   ml: string;
 }> = [
   {
-    token: '--size-display',
-    job: 'Page title',
-    face: 'display',
-    weight: 800,
-    en: 'YOUR HOUSEHOLD',
-    ml: 'നിങ്ങളുടെ വീട്',
-  },
-  {
-    token: '--size-status',
-    job: 'Status word',
-    face: 'display',
-    weight: 800,
-    en: 'WARNING',
-    ml: 'മുന്നറിയിപ്പ്',
-  },
-  {
-    token: '--size-action',
-    job: 'The action — largest element on a citizen screen',
+    token: '--size-hero',
+    job: 'The one thing a screen is about. At most one per screen.',
     face: 'body',
     weight: 600,
     en: 'Move to a higher floor now.',
     ml: 'ഇപ്പോൾ മുകളിലത്തെ നിലയിലേക്ക് മാറുക.',
   },
   {
-    token: '--size-title',
-    job: 'Section heading',
+    token: '--size-status',
+    job: 'The level word, in the display face',
     face: 'display',
-    weight: 700,
-    en: 'Shelters near you',
-    ml: 'അടുത്തുള്ള ഷെൽട്ടറുകൾ',
+    weight: 800,
+    en: 'WARNING',
+    ml: 'മുന്നറിയിപ്പ്',
   },
   {
-    token: '--size-body',
-    job: 'Body copy',
+    token: '--size-lead',
+    job: 'A secondary statement, or an option in a list',
     face: 'body',
     weight: 400,
     en: 'Water is expected to reach your door before 14:20.',
     ml: 'വെള്ളം നിങ്ങളുടെ വാതിൽക്കൽ എത്താൻ സാധ്യതയുണ്ട്.',
   },
   {
-    token: '--size-small',
-    job: 'Secondary body',
+    token: '--size-body',
+    job: 'Body copy',
     face: 'body',
     weight: 400,
     en: 'You need 90 minutes to move.',
@@ -165,18 +158,18 @@ const TYPE_SCALE: Array<{
   },
   {
     token: '--size-caption',
-    job: 'Caption, list label',
+    job: 'Supporting detail, reasoning, captions',
     face: 'body',
     weight: 400,
-    en: 'Ground floor · No vehicle',
+    en: 'Because of your house: ground floor · no vehicle',
     ml: 'താഴത്തെ നില · വാഹനമില്ല',
   },
   {
     token: '--size-micro',
-    job: 'Stamped label, chip, clause number',
+    job: 'Stamped labels and chips. Never prose.',
     face: 'display',
-    weight: 700,
-    en: 'SIMULATED DATA',
+    weight: 500,
+    en: 'CROSSES YOUR LIMIT IN',
     ml: 'പരീക്ഷണ വിവരം',
   },
 ];
@@ -270,7 +263,7 @@ function TypographyClause() {
           Every number that can change is tabular, so a digit changing does not shift the
           ones beside it. Compare the columns: they hold their position.
         </p>
-        <div className="num grid grid-cols-3 gap-x-6 text-[length:var(--size-num-lg)]">
+        <div className="num grid grid-cols-3 gap-x-6 text-[length:var(--size-num-lead)]">
           {['14.0 cm', '111.1 cm', '38.4 cm', '09:15', '11:00', '14:20', '0.65', '0.20', '0.41'].map(
             (value) => (
               <span key={value} style={{ fontWeight: 500 }}>
@@ -423,10 +416,10 @@ function ColourClause() {
   // resolves to its citizen value and the table quietly lies.
   const cityProbe = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
-  // One paint is enough for the refs to exist; this is not a loop.
-  useMemo(() => {
-    if (typeof queueMicrotask === 'function') queueMicrotask(() => setReady(true));
-  }, []);
+  /* The tables read computed styles off real elements, so they cannot be built until
+     after the first paint. This was a queueMicrotask inside useMemo — a side effect in
+     render, which React logged as an error on every load of this page. */
+  useEffect(() => setReady(true), []);
 
   return (
     <>
@@ -776,7 +769,7 @@ function StatusCardClause() {
   return (
     <>
       <p
-        className="mb-5 max-w-[62ch] text-[length:var(--size-small)] leading-relaxed"
+        className="mb-5 max-w-[62ch] text-[length:var(--size-caption)] leading-relaxed"
         style={{ color: 'var(--fg-muted)' }}
       >
         Both cards below are the same zone, the same hazard and the same rainfall — 120 mm/h
@@ -842,6 +835,7 @@ function ButtonClause() {
         <div className="flex flex-wrap items-center gap-3">
           <Button variant="primary">Register your household</Button>
           <Button variant="quiet">Not now</Button>
+          <Button variant="text">Skip this question</Button>
         </div>
         <div className="mt-4">
           <Button variant="emergency" size="lg" style={{ width: '100%' }}>
@@ -887,6 +881,58 @@ function ButtonClause() {
   );
 }
 
+/** The controls a question is answered with, plus the label/number pair. */
+function ChoosingClause() {
+  const [floor, setFloor] = useState(0);
+  const [elderly, setElderly] = useState(false);
+  const [ward, setWard] = useState('kaloor');
+
+  return (
+    <div className="grid gap-6 lg:grid-cols-2">
+      <Specimen label="Single choice — advances on selection">
+        <div role="radiogroup" aria-label="Floor" className="space-y-2">
+          {['Ground floor', 'First floor', 'Second floor'].map((label, i) => (
+            <Choice key={label} label={label} selected={floor === i} onSelect={() => setFloor(i)} />
+          ))}
+        </div>
+      </Specimen>
+
+      <div className="space-y-6">
+        <Specimen label="Toggle — more than one can be true">
+          <div className="space-y-2">
+            <Toggle
+              label="Someone is elderly"
+              pressed={elderly}
+              onToggle={() => setElderly((v) => !v)}
+            />
+            <Toggle
+              label="Someone needs help to move"
+              hint="Bedridden, or cannot walk without help"
+              pressed={false}
+              onToggle={() => {}}
+            />
+          </div>
+        </Specimen>
+
+        <Specimen label="Select — the keyboard path where a map is the pointer path">
+          <Select id="sg-ward" label="Choose your ward" value={ward} onChange={setWard}>
+            <option value="kaloor">Kaloor</option>
+            <option value="vyttila">Vyttila</option>
+            <option value="edappally">Edappally</option>
+          </Select>
+        </Specimen>
+
+        <Specimen label="Stat — a number with its label">
+          <div className="grid grid-cols-2 gap-4">
+            <Stat label="Crosses your limit in" value="15 min" tone="warning" />
+            <Stat label="You need" value="1 h 30 min" />
+          </div>
+        </Specimen>
+      </div>
+    </div>
+  );
+}
+
 function ChipClause() {
   const chips = (
     <div className="flex flex-wrap items-center gap-2">
@@ -905,13 +951,8 @@ function ChipClause() {
     <div className="grid gap-6 lg:grid-cols-2">
       <Specimen label="Citizen surface">{chips}</Specimen>
       <div>
-        <div
-          className="display mb-2 text-[length:var(--size-micro)] tracking-[0.14em]"
-          style={{ color: 'var(--fg-muted)' }}
-        >
-          City surface
-        </div>
-        <Surface kind="city" className="p-4">
+        <SectionHeading>City surface</SectionHeading>
+        <Surface kind="city" className="mt-2 p-4">
           {chips}
         </Surface>
       </div>
@@ -943,7 +984,10 @@ function StatesClause() {
 
 export default function Styleguide() {
   return (
-    <div className="mx-auto w-full max-w-[68rem] px-5 py-8">
+    <div
+      className="mx-auto w-full max-w-[68rem]"
+      style={{ padding: 'var(--space-xl) var(--gutter) var(--space-2xl)' }}
+    >
       {/* Masthead. A specimen sheet states what it is, what it covers and when it was
           issued — the same furniture a public standards document carries. */}
       <header>
@@ -956,7 +1000,7 @@ export default function Styleguide() {
               Nagaranetra · Design system
             </div>
             <h1
-              className="display mt-1 text-[length:var(--size-display)] leading-[0.9]"
+              className="display mt-1 text-[length:var(--size-hero)] leading-[0.9]"
               style={{ fontWeight: 800 }}
             >
               Specimen sheet
@@ -992,7 +1036,7 @@ export default function Styleguide() {
       <Clause
         n="1"
         title="Typography"
-        rule="Archivo for display, in condensed heavy weights and status words only. Inter for body. Noto Sans Malayalam for Malayalam, scoped by unicode-range so mixed lines shape correctly. IBM Plex Mono, tabular, for every number that can change."
+        rule="Five text sizes, and a screen should use three of them. --size-hero is for the one thing a screen is about; if two things want it, the screen has two ideas and needs splitting. Archivo for display in condensed heavy weights, status words only. Inter for body. Noto Sans Malayalam, scoped by unicode-range so mixed lines shape correctly. IBM Plex Mono, tabular, for every number that can change."
       >
         <TypographyClause />
       </Clause>
@@ -1031,6 +1075,14 @@ export default function Styleguide() {
 
       <Clause
         n="6"
+        title="Choosing"
+        rule="A question is answered by choosing, so the choice is the largest target on the screen and the whole row is pressable. Single-choice rows advance on selection; toggles wait, because more than one answer can be true at once."
+      >
+        <ChoosingClause />
+      </Clause>
+
+      <Clause
+        n="7"
         title="Chips"
         rule="A chip states a fact about the system: what the hazard level is, or where the data came from. The data-source chip is never hidden and has no dismiss control."
       >
@@ -1038,7 +1090,7 @@ export default function Styleguide() {
       </Clause>
 
       <Clause
-        n="7"
+        n="8"
         title="Empty and error states"
         rule="An empty screen is an invitation to act. An error says what happened, what it means for this person, and the one thing that fixes it — never 'try again later'."
       >
@@ -1046,12 +1098,12 @@ export default function Styleguide() {
       </Clause>
 
       <Clause
-        n="8"
+        n="9"
         title="Motion"
         rule="One orchestrated moment: the threshold crossing. The fill, the needle and the limit stamp are driven by a single spring, so they land on the same beat by construction. Everything else is a plain transition on a named property. Under prefers-reduced-motion, movement drops and opacity survives."
       >
         <Specimen label="Verify">
-          <p className="text-[length:var(--size-small)] leading-relaxed">
+          <p className="text-[length:var(--size-caption)] leading-relaxed">
             Set “Reduce motion” in your operating system and drag the scrubber in §3. The
             needle should jump to its value instead of springing to it, while the fill colour
             still steps up the ladder — the information survives, the movement does not.

@@ -12,7 +12,7 @@ import { LEVEL_WORD, levelTokens } from '../lib/levels';
 export function LevelChip({ level, size = 'md' }: { level: Level; size?: 'sm' | 'md' | 'lg' }) {
   const { fill, on } = levelTokens(level);
   const fontSize =
-    size === 'lg' ? 'var(--size-title)' : size === 'sm' ? 'var(--size-micro)' : 'var(--size-caption)';
+    size === 'lg' ? 'var(--size-lead)' : size === 'sm' ? 'var(--size-micro)' : 'var(--size-caption)';
 
   return (
     <span

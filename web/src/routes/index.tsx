@@ -100,30 +100,30 @@ export default function Dashboard() {
 
   if (state.kind === 'loading') {
     return (
-      <section className="mx-auto w-full max-w-[46rem] px-5 py-8">
-        <p style={{ color: 'var(--fg-muted)' }}>Working out what this means for your house…</p>
-      </section>
+      <Page>
+        <p style={{ fontSize: 'var(--size-body)', color: 'var(--fg-muted)' }}>
+          Working out what this means for your house…
+        </p>
+      </Page>
     );
   }
 
   if (state.kind === 'none') {
     return (
-      <section className="mx-auto w-full max-w-[46rem] px-5 py-8">
+      <Page>
         <EmptyState
           heading="Tell us about your home"
-          body="Once we know your floor and your building, every warning after this one is about your house — not your district. It takes under a minute and you can skip anything."
+          body="Once we know your floor and your building, every warning after this one is about your house — not your district. Under a minute, and you can skip anything."
           actionLabel="Register your household"
-          onAction={() => {
-            window.location.href = '/setup';
-          }}
+          href="/setup"
         />
-      </section>
+      </Page>
     );
   }
 
   if (state.kind === 'error') {
     return (
-      <section className="mx-auto w-full max-w-[46rem] px-5 py-8">
+      <Page>
         <ErrorState
           heading="Cannot work out your warning"
           whatHappened="The forecast service answered with something this app could not read, so there is no number to show you rather than a wrong one."
@@ -133,7 +133,7 @@ export default function Dashboard() {
             window.location.href = '/help';
           }}
         />
-      </section>
+      </Page>
     );
   }
 
@@ -142,7 +142,7 @@ export default function Dashboard() {
   const assumptions = profile.skipped.map((id) => ASSUMPTION_COPY[id]).filter(Boolean);
 
   return (
-    <section className="mx-auto w-full max-w-[46rem] px-5 pb-12 pt-6">
+    <Page>
       <StatusCard
         hazardLabel={`Flood · ${titleCase(zoneName)}`}
         level={answer.level}
@@ -157,12 +157,19 @@ export default function Dashboard() {
         reasons={answer.reasons}
       />
 
-      {/* Directly under the instruction, because the instruction is what it answers. */}
-      <div className="mt-4">
+      {/* Directly under the instruction, because it is what the instruction leads to. */}
+      <div style={{ marginTop: 'var(--space-lg)' }}>
         <Button variant="emergency" size="lg" href="/help" style={{ width: '100%' }}>
           Get help
         </Button>
-        <p className="mt-2 text-[length:var(--size-caption)]" style={{ color: 'var(--fg-muted)' }}>
+        <p
+          style={{
+            marginTop: 'var(--space-sm)',
+            fontSize: 'var(--size-caption)',
+            color: 'var(--fg-muted)',
+            lineHeight: 1.5,
+          }}
+        >
           No account needed. Works without a network — your request is queued and sent when
           the signal returns.
         </p>
@@ -170,22 +177,24 @@ export default function Dashboard() {
 
       {/* An answer built partly on assumptions has to say which ones. */}
       {assumptions.length > 0 && (
-        <div
-          className="mt-6 px-4 py-3"
-          style={{ border: '1px solid var(--hairline)', borderRadius: 'var(--radius-md)' }}
+        <p
+          style={{
+            marginTop: 'var(--space-lg)',
+            fontSize: 'var(--size-caption)',
+            color: 'var(--fg-muted)',
+            lineHeight: 1.5,
+          }}
         >
-          <p className="text-[length:var(--size-caption)]" style={{ color: 'var(--fg-muted)' }}>
-            You skipped some questions, so this warning assumes {assumptions.join(', ')}.{' '}
-            <Link to="/setup" style={{ color: 'var(--action)' }}>
-              Fill them in
-            </Link>{' '}
-            and it gets sharper.
-          </p>
-        </div>
+          You skipped some questions, so this assumes {assumptions.join(', ')}.{' '}
+          <Link to="/setup" style={{ color: 'var(--action)' }}>
+            Fill them in
+          </Link>{' '}
+          and it gets sharper.
+        </p>
       )}
 
-      <div className="mt-8">
-        <Suspense fallback={<div style={{ height: 176 }} aria-hidden="true" />}>
+      <div style={{ marginTop: 'var(--space-2xl)' }}>
+        <Suspense fallback={<div style={{ height: 200 }} aria-hidden="true" />}>
           <ForecastSparkline
             forecast={forecast}
             zoneId={profile.zoneId}
@@ -196,14 +205,36 @@ export default function Dashboard() {
         </Suspense>
       </div>
 
-      <div className="mt-8">
+      <div style={{ marginTop: 'var(--space-2xl)' }}>
         <NearbyList services={services} />
       </div>
 
-      <p className="mt-8 text-[length:var(--size-micro)]" style={{ color: 'var(--fg-muted)' }}>
+      <p
+        style={{
+          marginTop: 'var(--space-2xl)',
+          fontSize: 'var(--size-micro)',
+          color: 'var(--fg-muted)',
+          lineHeight: 1.6,
+        }}
+      >
         Hazard levels are modelled, not measured. We notify and match — a human authority
         decides and acts.
       </p>
+    </Page>
+  );
+}
+
+/**
+ * The page frame. One column, generous margins, and the same rhythm on every state — a
+ * loading screen that sits at a different width than the loaded one reads as a jump.
+ */
+function Page({ children }: { children: React.ReactNode }) {
+  return (
+    <section
+      className="mx-auto w-full max-w-[38rem]"
+      style={{ padding: 'var(--space-xl) var(--gutter) var(--space-2xl)' }}
+    >
+      {children}
     </section>
   );
 }

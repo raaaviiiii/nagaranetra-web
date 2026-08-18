@@ -48,17 +48,17 @@ export function ErrorState({
       </span>
 
       <h2
-        className="display mt-3 text-[length:var(--size-title)] tracking-[0.02em]"
+        className="display mt-3 text-[length:var(--size-lead)] tracking-[0.02em]"
         style={{ fontWeight: 700 }}
       >
         {heading}
       </h2>
 
-      <p className="mt-2 max-w-[46ch] text-[length:var(--size-small)] leading-relaxed">
+      <p className="mt-2 max-w-[46ch] text-[length:var(--size-caption)] leading-relaxed">
         {whatHappened}
       </p>
       <p
-        className="mt-2 max-w-[46ch] text-[length:var(--size-small)] leading-relaxed"
+        className="mt-2 max-w-[46ch] text-[length:var(--size-caption)] leading-relaxed"
         style={{ color: 'var(--fg-muted)' }}
       >
         {howToFix}

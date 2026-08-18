@@ -74,7 +74,7 @@ function domainFor(bands: Band[], current: number, threshold: number, max?: numb
   return { min, max: end };
 }
 
-const TRACK_HEIGHT = { sm: 6, md: 12, lg: 18 } as const;
+const TRACK_HEIGHT = { sm: 6, md: 14, lg: 28 } as const;
 
 export function ThresholdLine({
   current,
@@ -167,7 +167,7 @@ export function ThresholdLine({
 
       {/* The limit, above the track. Fixed, ink, and stamped once it is passed. */}
       {size !== 'sm' && (
-        <div className="relative mb-4 h-[1.15em]">
+        <div className="relative h-[1.15em]" style={{ marginBottom: 'var(--space-md)' }}>
           <div
             className="absolute top-0 whitespace-nowrap"
             style={{ left: `${thresholdPercent}%`, transform: labelAlign(thresholdPercent) }}
@@ -272,14 +272,18 @@ export function ThresholdLine({
           the left edge reads as a broken label rather than as a measurement, and an empty
           instrument already says there is nothing to read. */}
       {size !== 'sm' && showsReading && (
-        <div className="relative mt-1.5 h-[1.3em]">
+        <div className="relative h-[1.3em]" style={{ marginTop: 'var(--space-sm)' }}>
           <div
             className="absolute top-0 whitespace-nowrap"
             style={{ left: `${currentPercent}%`, transform: labelAlign(currentPercent) }}
           >
             <span
-              className="num text-[length:var(--size-num-md)]"
-              style={{ color: 'var(--fg)', fontWeight: 500 }}
+              className="num"
+              style={{
+                color: 'var(--fg)',
+                fontWeight: 500,
+                fontSize: size === 'lg' ? 'var(--size-num-lead)' : 'var(--size-num-body)',
+              }}
             >
               {formatValue(current, unit)}
             </span>

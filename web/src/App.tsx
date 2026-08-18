@@ -24,15 +24,25 @@ const Damage = lazy(() => import('./routes/damage'));
 const City = lazy(() => import('./routes/city'));
 const Styleguide = lazy(() => import('./routes/styleguide'));
 
+/**
+ * The header carries only what a resident needs during an event. Eight equal links did not
+ * fit a phone — the row clipped mid-word — and a nav that competes with the screen's one
+ * idea is chrome doing content's job.
+ */
 const NAV = [
   { to: '/', label: 'Home', end: true },
-  { to: '/setup', label: 'Register', end: false },
   { to: '/help', label: 'Help', end: false },
   { to: '/shelters', label: 'Shelters', end: false },
   { to: '/nearby', label: 'Nearby', end: false },
-  { to: '/damage', label: 'Damage', end: false },
-  { to: '/city', label: 'City', end: false },
-  { to: '/styleguide', label: 'Style', end: false },
+];
+
+/** Reachable, but not competing: registration is a one-time flow, and the last two are
+ *  for us and for the jury rather than for a resident. */
+const SECONDARY = [
+  { to: '/setup', label: 'Register your household' },
+  { to: '/damage', label: 'Report damage' },
+  { to: '/city', label: 'City dashboard' },
+  { to: '/styleguide', label: 'Design system' },
 ];
 
 export default function App() {
@@ -51,26 +61,26 @@ export default function App() {
         className="sticky top-0 z-40 border-b"
         style={{ background: 'var(--bg)', borderColor: 'var(--hairline)' }}
       >
-        <div className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between px-5">
-          <span className="display text-sm tracking-[0.16em]" style={{ fontWeight: 700 }}>
+        <div
+          className="mx-auto flex h-14 w-full max-w-[80rem] items-center justify-between"
+          style={{ padding: '0 var(--gutter)' }}
+        >
+          <span
+            className="display"
+            style={{ fontSize: 'var(--size-caption)', letterSpacing: '0.16em', fontWeight: 700 }}
+          >
             Nagaranetra
           </span>
           <StatusChip />
         </div>
-        <nav aria-label="Sections" className="border-t" style={{ borderColor: 'var(--hairline)' }}>
-          <ul className="mx-auto flex w-full max-w-[80rem] gap-4 overflow-x-auto px-5 py-2 text-sm">
+        <nav aria-label="Sections" className="ng-nav border-t" style={{ borderColor: 'var(--hairline)' }}>
+          <ul
+            className="mx-auto flex w-full max-w-[80rem] overflow-x-auto"
+            style={{ gap: 'var(--space-md)', padding: 'var(--space-sm) var(--gutter)' }}
+          >
             {NAV.map((item) => (
               <li key={item.to}>
-                <NavLink
-                  to={item.to}
-                  end={item.end}
-                  className="whitespace-nowrap"
-                  style={({ isActive }) => ({
-                    color: isActive ? 'var(--fg)' : 'var(--fg-muted)',
-                    textDecoration: isActive ? 'underline' : 'none',
-                    textUnderlineOffset: '4px',
-                  })}
-                >
+                <NavLink to={item.to} end={item.end}>
                   {item.label}
                 </NavLink>
               </li>
@@ -99,6 +109,22 @@ export default function App() {
           </Routes>
         </Suspense>
       </main>
+
+      <footer
+        className="ng-nav mt-auto border-t"
+        style={{ borderColor: 'var(--hairline)' }}
+      >
+        <ul
+          className="mx-auto flex w-full max-w-[80rem] flex-wrap"
+          style={{ gap: 'var(--space-md)', padding: 'var(--space-md) var(--gutter)' }}
+        >
+          {SECONDARY.map((item) => (
+            <li key={item.to}>
+              <NavLink to={item.to}>{item.label}</NavLink>
+            </li>
+          ))}
+        </ul>
+      </footer>
 
       <Toaster position="bottom-center" />
     </div>

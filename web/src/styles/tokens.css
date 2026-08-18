@@ -65,6 +65,12 @@
   --on-alert:      var(--ink);
   --on-warning:    var(--paper-raised);
 
+  /* The basemap. Achromatic, because a map is context and §5 keeps colour for hazard
+     level and one action blue — the city is drawn in tones of ink. Water is deliberately
+     the stronger of the two: in Kochi the water is the landmark you navigate by. */
+  --map-water:     color-mix(in srgb, var(--ink) 13%, var(--paper));
+  --map-road:      color-mix(in srgb, var(--ink) 34%, var(--paper));
+
   /* A hairline is a separator, and WCAG does not hold separators to a ratio. A border
      that carries meaning — the edge of a control, the frame of an instrument — does.
      --edge is that border: 5.71:1 on paper, where --rule is 1.22:1. */
@@ -93,21 +99,38 @@
   --ease-inout: cubic-bezier(0.65, 0, 0.35, 1);
 
   /* ---- Type scale ---------------------------------------------------------
-     Named by job, not by size, so a screen asks for "the action" and gets whatever
-     the system currently says an action is. Fluid sizes are clamped: the citizen
-     surface is read at arm's length on a phone and across a room on a projector. */
-  --size-display:  clamp(2.25rem, 9vw, 3.5rem);  /* page titles */
-  --size-status:   clamp(1.75rem, 7vw, 2.75rem); /* the level word: WARNING */
-  --size-action:   clamp(1.5rem, 5.5vw, 2.125rem); /* the instruction — the largest
-                                                      element on a citizen screen */
-  --size-title:    1.25rem;
-  --size-body:     1.0625rem;
-  --size-small:    0.9375rem;
-  --size-caption:  0.8125rem;
-  --size-micro:    0.6875rem;   /* stamped labels, chips, clause numbers */
-  --size-num-xl:   clamp(2rem, 8vw, 3rem);
-  --size-num-lg:   1.5rem;
-  --size-num-md:   1rem;
+     FIVE text sizes and three number sizes, and a screen should use three of them.
+     The previous scale had eleven, and the product used the three smallest 78 times
+     against 2 uses of the largest — everything ended up the same visual weight, which
+     is the opposite of hierarchy. Restraint is not a small type size; it is few sizes,
+     far apart, used with conviction.
+
+     --size-hero is for THE ONE THING a screen is about. There is at most one per
+     screen. If two things want it, the screen has two ideas and needs splitting. */
+  --size-hero:    clamp(2.25rem, 8.5vw, 3.75rem);
+  --size-status:  clamp(1.5rem, 5vw, 2rem);   /* the level word, Archivo heavy */
+  --size-lead:    1.3125rem;                  /* a secondary statement */
+  --size-body:    1.0625rem;
+  --size-caption: 0.875rem;
+  --size-micro:   0.6875rem;                  /* stamped labels only, never prose */
+
+  --size-num-hero: clamp(2rem, 7vw, 2.75rem);
+  --size-num-lead: 1.5rem;
+  --size-num-body: 1.0625rem;
+
+  /* ---- Spacing rhythm -----------------------------------------------------
+     One scale, so vertical rhythm is a decision rather than an accident. The page
+     had eight unrelated spacing values before this. */
+  --space-xs:  0.5rem;
+  --space-sm:  0.75rem;
+  --space-md:  1.25rem;
+  --space-lg:  2rem;
+  --space-xl:  3rem;
+  /* Between major sections. Generous on purpose: whitespace is what makes a single
+     idea per screen legible as a single idea. */
+  --space-2xl: clamp(3rem, 9vw, 5.5rem);
+  /* Page side margins. */
+  --gutter:    clamp(1.25rem, 5vw, 2rem);
 
   /* ---- Geometry ----------------------------------------------------------- */
   --radius-sm: 2px;
@@ -135,6 +158,8 @@
   /* 55% measured 2.74:1 against --base and failed. 72% clears 3:1 with headroom;
      §2 of /styleguide measures it every time the page loads. */
   --edge:        color-mix(in srgb, var(--ink-dark) 72%, var(--base));
+  --map-water:   color-mix(in srgb, var(--ink-dark) 16%, var(--surface));
+  --map-road:    color-mix(in srgb, var(--ink-dark) 45%, var(--surface));
 }
 
 html {

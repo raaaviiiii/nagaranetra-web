@@ -1,23 +1,32 @@
 /**
- * Pin your home.
+ * Pin your home, on a real map.
  *
- * Leaflet, with NO tile layer. That is deliberate, not unfinished: street tiles would come
- * from a CDN, and offline is a product requirement (CLAUDE.md §5) — a map that goes blank
- * on hackathon WiFi is worse than a map that never pretended to have streets. Ward
- * geometry from OSM is committed to public/data later; this component picks it up the
- * moment it lands, because the only thing it needs from a basemap is orientation.
+ * WHAT WAS WRONG BEFORE. There was no basemap at all — ward dots on an empty field with
+ * labels colliding on the markers. That was not a styling problem: the basemap had never
+ * been wired up, and the reason given for it ("tiles come from a CDN and offline is a
+ * requirement") was a true statement used to justify shipping nothing.
  *
- * What it does need to be right is the coordinate, and that is real: the pin's lat/lng
- * decides which zone's forecast this household gets.
+ * WHAT IT IS NOW. Self-hosted geometry rather than self-hosted pictures of geometry. One
+ * Overpass query per city, committed to public/data as coordinates, drawn by Leaflet as
+ * vectors from our own tokens (scripts/fetch-basemap.mjs). That is a real map with real
+ * streets and the actual backwaters, it works with the network off, the service worker
+ * precaches it, and it is the same OSM data the 3D scene needs in §6 — one source feeding
+ * both. Raster tiles were never available: OSM's tile policy forbids bulk downloading, and
+ * a demo leaning on someone else's tile server dies with the venue WiFi.
  *
- * The marker is a DivIcon rather than Leaflet's default, so no image assets are fetched
- * and the pin is drawn from our own tokens.
+ * Roads are drawn in three weights so a city reads as a city rather than as a mesh, and
+ * water is filled, because in Kochi the water is what you recognise.
+ *
+ * Data © OpenStreetMap contributors, ODbL — credited on the map.
  */
 import { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import type { City, Zone } from '../../lib/contract';
 import { distanceM } from '../../lib/mock';
+import { readToken } from '../../lib/contrast';
+import { Button } from '../Button';
+import { Select } from '../Select';
 
 export type PinnedPlace = { lat: number; lng: number; zone: Zone };
 
@@ -28,7 +37,35 @@ export function zoneAt(city: City, lat: number, lng: number): Zone {
   );
 }
 
+type Line = Array<[number, number]>;
+type Basemap = {
+  attribution: string;
+  water: Line[];
+  /** Coastline, drawn as a stroke — it is what gives Kochi its recognisable shape. */
+  shore?: Line[];
+  roads: { major: Line[]; arterial: Line[]; street: Line[] };
+};
+
 type GeolocationState = 'idle' | 'locating' | 'denied' | 'unavailable' | 'located';
+
+/**
+ * Weights chosen so the hierarchy survives at ward zoom without turning into a hairball.
+ *
+ * These are drawn on a CANVAS, not as SVG. The extract has roughly 13,000 road segments,
+ * and one SVG path each is 13,000 DOM nodes — which pans nowhere near the 60fps CLAUDE.md
+ * §6 asks for on a mid-range phone. Canvas draws them as one surface.
+ *
+ * The cost of canvas is that CSS cannot reach the features, so the colours are read out of
+ * the tokens at mount instead. They must not be passed as `var(--map-road)` either way:
+ * Leaflet writes that into an SVG presentation attribute where var() does not resolve, and
+ * the silent fallback is Leaflet's default blue — the one colour this product must never
+ * show by accident.
+ */
+const ROAD_STYLE = {
+  street: { weight: 0.6, opacity: 0.42 },
+  arterial: { weight: 1.3, opacity: 0.72 },
+  major: { weight: 2.1, opacity: 1 },
+} as const;
 
 export function MapPicker({
   city,
@@ -42,12 +79,25 @@ export function MapPicker({
   const container = useRef<HTMLDivElement>(null);
   const map = useRef<L.Map | null>(null);
   const pin = useRef<L.Marker | null>(null);
-  const zoneDots = useRef<Map<string, L.CircleMarker>>(new Map());
   const [geo, setGeo] = useState<GeolocationState>('idle');
+  const [basemap, setBasemap] = useState<Basemap | null>(null);
 
   // Keep the newest handler without tearing the map down on every render.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+
+  // Same-origin, so this still resolves from the service worker cache when offline.
+  useEffect(() => {
+    let live = true;
+    void fetch(`/data/basemap-${city.id}.json`)
+      .then((response) => (response.ok ? response.json() : null))
+      .then((data: Basemap | null) => live && setBasemap(data))
+      // A missing basemap is survivable: the pin and the ward list still work.
+      .catch(() => live && setBasemap(null));
+    return () => {
+      live = false;
+    };
+  }, [city.id]);
 
   useEffect(() => {
     if (!container.current || map.current) return;
@@ -55,40 +105,18 @@ export function MapPicker({
     const instance = L.map(container.current, {
       center: [city.center.lat, city.center.lng],
       zoom: 12,
-      // No tiles means no attribution to show, and the default control would be a lie.
-      attributionControl: false,
       zoomControl: true,
+      attributionControl: true,
     });
     map.current = instance;
-
-    // The wards, so the blank field is still orientable. Only the ward the pin is in is
-    // labelled: Kochi's ward centres sit close enough together that labelling all of them
-    // produces a pile of overlapping text at the zoom that fits the city.
-    for (const zone of city.zones) {
-      const dot = L.circleMarker([zone.lat, zone.lng], {
-        radius: 5,
-        color: 'var(--fg-muted)',
-        weight: 1,
-        fillOpacity: 0.35,
-        interactive: false,
-      }).addTo(instance);
-      dot.bindTooltip(zone.name, { permanent: false, direction: 'right', className: 'ng-zone-label' });
-      // Chrome puts these SVG shapes in the tab order, which buried the real controls
-      // behind ten unlabelled stops. They are decoration for pointer users; the ward
-      // select below is the keyboard path.
-      const element = dot.getElement();
-      if (element) {
-        element.setAttribute('tabindex', '-1');
-        element.setAttribute('aria-hidden', 'true');
-      }
-      zoneDots.current.set(zone.id, dot);
-    }
+    instance.attributionControl.setPrefix(false);
 
     const marker = L.marker([city.center.lat, city.center.lng], {
       draggable: true,
-      keyboard: true,
-      icon: L.divIcon({ className: 'ng-pin', html: '<span></span>', iconSize: [18, 18] }),
+      keyboard: false,
+      icon: L.divIcon({ className: 'ng-pin', html: '<span></span>', iconSize: [20, 20] }),
       alt: 'Your home',
+      zIndexOffset: 1000,
     }).addTo(instance);
     pin.current = marker;
 
@@ -101,31 +129,74 @@ export function MapPicker({
       const { lat, lng } = marker.getLatLng();
       publish(lat, lng);
     });
-    instance.on('click', (event: L.LeafletMouseEvent) => {
-      publish(event.latlng.lat, event.latlng.lng);
-    });
-
-    instance.fitBounds(L.latLngBounds(city.zones.map((z) => [z.lat, z.lng])), { padding: [36, 36] });
+    instance.on('click', (event: L.LeafletMouseEvent) => publish(event.latlng.lat, event.latlng.lng));
+    instance.fitBounds(L.latLngBounds(city.zones.map((z) => [z.lat, z.lng])), { padding: [28, 28] });
 
     return () => {
       instance.remove();
       map.current = null;
       pin.current = null;
-      zoneDots.current.clear();
     };
   }, [city]);
 
-  // Follow an externally set value (initial centre, or "use my location").
+  // Draw the basemap once it has loaded.
   useEffect(() => {
-    if (!value || !pin.current || !map.current) return;
-    pin.current.setLatLng([value.lat, value.lng]);
+    const instance = map.current;
+    if (!instance || !basemap) return;
 
-    const inside = zoneAt(city, value.lat, value.lng);
-    for (const [id, dot] of zoneDots.current) {
-      if (id === inside.id) dot.openTooltip();
-      else dot.closeTooltip();
+    // Read the palette from the live tokens: canvas features cannot be reached by CSS.
+    const water = readToken('--map-water', container.current ?? undefined);
+    const road = readToken('--map-road', container.current ?? undefined);
+    const renderer = L.canvas({ padding: 0.3 });
+    const layer = L.layerGroup().addTo(instance);
+
+    for (const shape of basemap.water) {
+      L.polygon(shape, {
+        renderer,
+        stroke: false,
+        fillColor: water,
+        fillOpacity: 1,
+        interactive: false,
+      }).addTo(layer);
     }
-  }, [value, city]);
+
+    for (const line of basemap.shore ?? []) {
+      L.polyline(line, {
+        renderer,
+        color: water,
+        weight: 2.5,
+        opacity: 1,
+        interactive: false,
+      }).addTo(layer);
+    }
+
+    // Smallest first, so arterials and highways draw over the residential mesh.
+    for (const kind of ['street', 'arterial', 'major'] as const) {
+      for (const line of basemap.roads[kind]) {
+        L.polyline(line, {
+          renderer,
+          color: road,
+          weight: ROAD_STYLE[kind].weight,
+          opacity: ROAD_STYLE[kind].opacity,
+          interactive: false,
+          lineJoin: 'round',
+          lineCap: 'round',
+        }).addTo(layer);
+      }
+    }
+
+    instance.attributionControl.addAttribution(basemap.attribution);
+    return () => {
+      layer.remove();
+      instance.attributionControl.removeAttribution(basemap.attribution);
+    };
+  }, [basemap]);
+
+  // Follow an externally set value (the initial centre, or "use my location").
+  useEffect(() => {
+    if (!value || !pin.current) return;
+    pin.current.setLatLng([value.lat, value.lng]);
+  }, [value]);
 
   function useMyLocation() {
     if (!('geolocation' in navigator)) {
@@ -138,9 +209,9 @@ export function MapPicker({
         setGeo('located');
         const { latitude, longitude } = position.coords;
         onChangeRef.current({ lat: latitude, lng: longitude, zone: zoneAt(city, latitude, longitude) });
+        map.current?.setView([latitude, longitude], 15);
       },
-      // A refused or failed lookup is a normal outcome, not an error state: the pin still
-      // works. Say what happened and leave the person a way forward.
+      // A refused lookup is a normal outcome, not an error: the pin still works.
       (error) => setGeo(error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable'),
       { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
     );
@@ -148,49 +219,48 @@ export function MapPicker({
 
   const geoMessage: Record<GeolocationState, string | null> = {
     idle: null,
-    locating: 'Finding you…',
+    locating: null,
     located: null,
-    denied: 'Your browser is not sharing your location. Tap the map to place the pin instead.',
-    unavailable: 'Could not get your location. Tap the map to place the pin instead.',
+    denied: 'Your browser is not sharing your location. Drag the pin, or choose your ward below.',
+    unavailable: 'Could not get your location. Drag the pin, or choose your ward below.',
   };
+
+  const selected = value ? zoneAt(city, value.lat, value.lng) : city.zones[0];
 
   return (
     <div>
-      <div
-        ref={container}
-        className="ng-map"
-        style={{
-          height: 'min(25vh, 280px)',
-          border: '1px solid var(--edge)',
-          borderRadius: 'var(--radius-md)',
-          background: 'var(--bg-raised)',
-        }}
-        aria-hidden="true"
-      />
+      <div ref={container} className="ng-map" style={{ height: 'min(34vh, 320px)' }} aria-hidden="true" />
+
+      <div style={{ marginTop: 'var(--space-md)' }}>
+        <Button variant="quiet" onClick={useMyLocation} disabled={geo === 'locating'}>
+          {geo === 'locating' ? 'Finding you…' : 'Use my location'}
+        </Button>
+      </div>
+
+      {geoMessage[geo] && (
+        <p
+          role="status"
+          style={{ marginTop: 'var(--space-sm)', fontSize: 'var(--size-caption)', color: 'var(--fg-muted)' }}
+        >
+          {geoMessage[geo]}
+        </p>
+      )}
 
       {/*
-        * The keyboard and screen-reader path.
-        *
-        * A map is a pointer instrument. Rather than pretend a blank canvas can be operated
-        * with a keyboard, the same answer is available as a list — which is also the way
-        * out when geolocation is refused and a person cannot recognise an unlabelled dot.
-        * Both controls write the same value.
-        */}
-      <div className="mt-3">
-        <label
-          htmlFor="ward"
-          className="display block text-[length:var(--size-micro)] tracking-[0.14em]"
-          style={{ color: 'var(--fg-muted)' }}
-        >
-          Or choose your ward
-        </label>
-        <select
+       * The keyboard and screen-reader path, and the way out when geolocation is refused.
+       * A map is a pointer instrument; rather than pretend a canvas can be driven from a
+       * keyboard, the same answer is available as a list. Both write the same value.
+       */}
+      <div style={{ marginTop: 'var(--space-md)' }}>
+        <Select
           id="ward"
-          className="ng-select mt-1"
-          value={value ? zoneAt(city, value.lat, value.lng).id : ''}
-          onChange={(event) => {
-            const zone = city.zones.find((z) => z.id === event.target.value);
-            if (zone) onChangeRef.current({ lat: zone.lat, lng: zone.lng, zone });
+          label="Or choose your ward"
+          value={selected.id}
+          onChange={(id) => {
+            const zone = city.zones.find((z) => z.id === id);
+            if (!zone) return;
+            onChangeRef.current({ lat: zone.lat, lng: zone.lng, zone });
+            map.current?.setView([zone.lat, zone.lng], 14);
           }}
         >
           {city.zones.map((zone) => (
@@ -198,37 +268,8 @@ export function MapPicker({
               {zone.name}
             </option>
           ))}
-        </select>
+        </Select>
       </div>
-
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className="ng-button display"
-          style={{
-            background: 'transparent',
-            color: 'var(--fg)',
-            border: '1px solid var(--edge)',
-            minHeight: 'var(--tap-min)',
-            fontSize: 'var(--size-small)',
-          }}
-          onClick={useMyLocation}
-          disabled={geo === 'locating'}
-        >
-          {geo === 'locating' ? 'Finding you…' : 'Use my location'}
-        </button>
-      </div>
-
-      {geoMessage[geo] && geo !== 'locating' && (
-        <p className="mt-2 text-[length:var(--size-caption)]" style={{ color: 'var(--fg-muted)' }} role="status">
-          {geoMessage[geo]}
-        </p>
-      )}
-
-      {/* The map is honest about what it is not. */}
-      <p className="mt-2 text-[length:var(--size-micro)]" style={{ color: 'var(--fg-muted)' }}>
-        Ward positions only — no street tiles offline yet. The coordinates are real.
-      </p>
     </div>
   );
 }
